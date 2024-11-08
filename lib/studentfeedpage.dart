@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'addpost.dart';
 import 'sospage.dart';
 
-// Main FeedPage where students can view posts and add new ones
+// Main FeedPage where students can view posts and add new posts
 class FeedPage extends StatefulWidget {
   @override
   _FeedPageState createState() => _FeedPageState();
