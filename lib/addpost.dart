@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
+// This screen allows users to add a post with their name and a description
 class AddPostScreen extends StatefulWidget {
-  final Function(String, String) onPostAdded;
+  final Function(String, String) onPostAdded; // Callback function to handle post addition
 
   const AddPostScreen({super.key, required this.onPostAdded});
 
@@ -10,18 +11,22 @@ class AddPostScreen extends StatefulWidget {
 }
 
 class _AddPostScreenState extends State<AddPostScreen> {
+  // Controllers to manage the input fields for name and description
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
 
+  // Function to handle canceling the post; it simply closes the screen
   void _cancelPost() {
     Navigator.pop(context);
   }
 
+  // Function to handle posting content
   void _postContent() {
-    final name = _nameController.text;
-    final description = _descriptionController.text;
+    final name = _nameController.text; // Retrieve text from name input field
+    final description = _descriptionController.text; // Retrieve text from description input field
 
-    widget.onPostAdded(name, description); // Call the callback to add the post
+    widget.onPostAdded(name, description); // Call the callback to add
+    widget.onPostAdded(name, description); // Call the callback to add the post with name and description to the feeds
     Navigator.pop(context); // Close the screen after posting
   }
 
@@ -33,22 +38,22 @@ class _AddPostScreenState extends State<AddPostScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: TextButton(
-          onPressed: _cancelPost,
+          onPressed: _cancelPost, // Call _cancelPost function when "Cancel" is pressed
           style: TextButton.styleFrom(
-            padding: EdgeInsets.zero, // Remove default padding
+            padding: EdgeInsets.zero, // Remove default padding for alignment
           ),
           child: Text(
-            'Cancel',
+            'Cancel', // Label for cancel button
             style: TextStyle(color: Colors.black, fontSize: 16),
           ),
         ),
         actions: [
           TextButton(
-            onPressed: _postContent,
-            child: Text(
-              'Post',
+            onPressed: _postContent, // Call _postContent function when "Post" is pressed
+            child: Text( 
+              'Post', // Label for post button
               style: TextStyle(
-                color: Colors.red[800],
+                color: Colors.red[800], // Style to indicate post action
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -64,15 +69,15 @@ class _AddPostScreenState extends State<AddPostScreen> {
               children: [
                 CircleAvatar(
                   radius: 24,
-                  backgroundColor: Colors.grey[300],
+                  backgroundColor: Colors.grey[300], // Placeholder profile icon
                   child: Icon(Icons.person, color: Colors.grey[600]),
                 ),
-                SizedBox(width: 10),
+                SizedBox(width: 10), // Space between avatar and name input
                 Expanded(
                   child: TextField(
-                    controller: _nameController,
+                    controller: _nameController, // Link TextField to _nameController
                     decoration: InputDecoration(
-                      hintText: 'Name',
+                      hintText: 'Name', // Placeholder text for name input
                       border: InputBorder.none,
                       hintStyle: TextStyle(color: Colors.grey),
                     ),
@@ -80,12 +85,12 @@ class _AddPostScreenState extends State<AddPostScreen> {
                 ),
               ],
             ),
-            Divider(height: 1),
+            Divider(height: 1), // Divider between name input and description
             TextField(
-              controller: _descriptionController,
-              maxLines: null,
+              controller: _descriptionController, // Link TextField to _descriptionController
+              maxLines: null, // Allow multiline for description input
               decoration: InputDecoration(
-                hintText: 'Describe your post...',
+                hintText: 'Describe your post...', // Placeholder for description
                 border: InputBorder.none,
                 hintStyle: TextStyle(color: Colors.grey),
               ),
