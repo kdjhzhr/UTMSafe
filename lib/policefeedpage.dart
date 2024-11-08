@@ -83,7 +83,7 @@ class FeedScreen extends StatelessWidget {
     });
   }
 
-  // Format timestamp 
+  // Format timestamp on feed
   String _formatTimestamp(Timestamp timestamp) {
     final date = timestamp.toDate();
     return DateFormat('dd/MM/yyyy HH:mm').format(date);
