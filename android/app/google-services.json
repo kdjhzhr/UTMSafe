@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1013666372928",
+    "project_id": "utmsafe-9825c",
+    "storage_bucket": "utmsafe-9825c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1013666372928:android:a98e52173c11b53884eea5",
+        "android_client_info": {
+          "package_name": "com.guardians.utmsafeapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAK_-a66ym9X8cOcOSx0I0TkfbIUPRRcEM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1013666372928:android:38fc8e963a6be1f084eea5",
+        "android_client_info": {
+          "package_name": "com.utmsafe.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAK_-a66ym9X8cOcOSx0I0TkfbIUPRRcEM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
