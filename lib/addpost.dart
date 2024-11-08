@@ -53,7 +53,7 @@ class _AddPostScreenState extends State<AddPostScreen> {
             child: Text( 
               'Post', // Label for post button
               style: TextStyle(
-                color: Colors.red[800], // Style to indicate post action
+                color: Color(0xFF8B0000), // Style to indicate post action
                 fontWeight: FontWeight.bold,
               ),
             ),
