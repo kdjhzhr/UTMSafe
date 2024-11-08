@@ -72,8 +72,7 @@ class _LoginFormState extends State<LoginForm> {
           ),
           child: const Text(
             'LOG IN',
-            style: TextStyle(
-                fontFamily: 'Roboto', color: Colors.white), // Button text style
+            style: TextStyle(fontFamily: 'Roboto', color: Colors.white),
           ),
         ),
         const SizedBox(height: 24), // Space below the login button
