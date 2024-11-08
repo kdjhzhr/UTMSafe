@@ -95,7 +95,7 @@ class _ReportState extends State<Report> {
                     count.toString(), // Display the count as a string.
                     style: const TextStyle(
                       fontSize: 48, // Large font size for the count.
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.bold, // Bold font
                     ),
                   );
                 },
