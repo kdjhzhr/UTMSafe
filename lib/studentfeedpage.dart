@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'addpost.dart';
-import 'sospage.dart';
+import 'emergency.dart';
 
 // Main FeedPage where students can view posts and add new posts
 class FeedPage extends StatefulWidget {
