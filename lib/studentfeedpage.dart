@@ -10,8 +10,11 @@ class FeedPage extends StatefulWidget {
 }
 
 class _FeedPageState extends State<FeedPage> {
-  int _selectedIndex = 0; // Track the selected item in the bottom navigation bar
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance; // Firestore instance for database operations
+  int _selectedIndex =
+      0; // Track the selected item in the bottom navigation bar
+  final FirebaseFirestore _firestore =
+      FirebaseFirestore.instance; // Firestore instance for database operations
+  bool _isAddingPost = false; // Track if a post is currently being added
 
   // Stream to listen for updates to posts in Firestore, sorted by timestamp in descending order
   Stream<List<Post>> _fetchPosts() {
@@ -27,21 +30,36 @@ class _FeedPageState extends State<FeedPage> {
 
   // Method to add a new post to Firestore with name, description, and timestamp
   Future<void> _addPost(String name, String description) async {
+    if (_isAddingPost) return; // Prevent duplicate submission
+
+    setState(() {
+      _isAddingPost = true;
+    });
+
     try {
       await _firestore.collection('posts').add({
         'name': name,
         'description': description,
-        'timestamp': FieldValue.serverTimestamp(), // Auto-generated server timestamp
+        'timestamp':
+            FieldValue.serverTimestamp(), // Auto-generated server timestamp
         'userType': 'student', // Label posts from students
       });
-      print("Post added successfully!"); // Debug log for successful post addition
+      print(
+          "Post added successfully!"); // Debug log for successful post addition
     } catch (e) {
       print("Error adding post: $e"); // Debug log for errors
+    } finally {
+      setState(() {
+        _isAddingPost = false;
+      });
     }
   }
 
   // Method to show a dialog for adding a new post
   void _showAddPostDialog() async {
+    if (_isAddingPost)
+      return; // Prevent opening dialog if already adding a post
+
     await Navigator.push(
       context,
       MaterialPageRoute(
@@ -71,21 +89,23 @@ class _FeedPageState extends State<FeedPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'UTMSafe', 
+          'UTMSafe',
           style: TextStyle(
             color: const Color(0xFF8B0000),
             fontWeight: FontWeight.bold,
             fontSize: 20,
           ),
         ),
-        backgroundColor: const Color(0xFFF5E9D4), // Background color for app bar
+        backgroundColor:
+            const Color(0xFFF5E9D4), // Background color for app bar
         automaticallyImplyLeading: false, // Remove default back button
         centerTitle: true,
         actions: [
           IconButton(
             icon: Icon(Icons.logout, color: const Color(0xFF8B0000)),
             onPressed: () {
-              Navigator.popUntil(context, (route) => route.isFirst); // Logout action
+              Navigator.popUntil(
+                  context, (route) => route.isFirst); // Logout action
             },
           ),
         ],
@@ -94,10 +114,12 @@ class _FeedPageState extends State<FeedPage> {
         stream: _fetchPosts(), // Stream of posts from Firestore
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator()); // Show loading indicator
+            return Center(
+                child: CircularProgressIndicator()); // Show loading indicator
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text("No posts available.")); // Show message if no posts
+            return Center(
+                child: Text("No posts available.")); // Show message if no posts
           }
 
           final posts = snapshot.data!;
@@ -114,7 +136,8 @@ class _FeedPageState extends State<FeedPage> {
                     children: [
                       CircleAvatar(
                         radius: 20,
-                        backgroundColor: Colors.grey[300], // Placeholder avatar for each post
+                        backgroundColor: Colors
+                            .grey[300], // Placeholder avatar for each post
                         child: Icon(Icons.person, color: Colors.grey[600]),
                       ),
                       SizedBox(width: 8),
