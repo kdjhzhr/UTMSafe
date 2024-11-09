@@ -3,62 +3,69 @@ import 'package:flutter/material.dart';
 import 'addpost.dart';
 import 'emergency.dart';
 
-// Main FeedPage where students can view posts and add new posts
 class FeedPage extends StatefulWidget {
   @override
   _FeedPageState createState() => _FeedPageState();
 }
 
 class _FeedPageState extends State<FeedPage> {
-  int _selectedIndex = 0; // Track the selected item in the bottom navigation bar
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance; // Firestore instance for database operations
+  int _selectedIndex = 0;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Stream to listen for updates to posts in Firestore, sorted by timestamp in descending order
+  // Track if a post is currently being added to prevent duplicates
+  bool _isPosting = false;
+
   Stream<List<Post>> _fetchPosts() {
     return _firestore
         .collection('posts')
         .orderBy('timestamp', descending: true)
         .snapshots()
         .map((snapshot) {
-      // Map Firestore documents to a list of Post objects
       return snapshot.docs.map((doc) => Post.fromFirestore(doc)).toList();
     });
   }
 
-  // Method to add a new post to Firestore with name, description, and timestamp
+  // Modify the method to add a new post with a check for duplicate calls
   Future<void> _addPost(String name, String description) async {
+    if (_isPosting) return; // Prevent multiple posts from being added at once
+    setState(() {
+      _isPosting = true;
+    });
+    
     try {
       await _firestore.collection('posts').add({
         'name': name,
         'description': description,
-        'timestamp': FieldValue.serverTimestamp(), // Auto-generated server timestamp
-        'userType': 'student', // Label posts from students
+        'timestamp': FieldValue.serverTimestamp(),
+        'userType': 'student',
       });
-      print("Post added successfully!"); // Debug log for successful post addition
+      print("Post added successfully!");
     } catch (e) {
-      print("Error adding post: $e"); // Debug log for errors
+      print("Error adding post: $e");
+    } finally {
+      setState(() {
+        _isPosting = false; // Reset posting state after completion
+      });
     }
   }
 
-  // Method to show a dialog for adding a new post
+  // Show dialog to add a new post
   void _showAddPostDialog() async {
     await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => AddPostScreen(
-          onPostAdded: _addPost, // Pass _addPost function to handle new posts
+          onPostAdded: _addPost,
         ),
       ),
     );
   }
 
-  // Handle taps on bottom navigation items
   void _onItemTapped(int index) {
     setState(() {
-      _selectedIndex = index; // Update selected index
+      _selectedIndex = index;
     });
     if (_selectedIndex == 1) {
-      // Navigate to SosPage when "Emergency" tab is selected
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => SosPage()),
@@ -71,36 +78,38 @@ class _FeedPageState extends State<FeedPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'UTMSafe', 
+          'UTMSafe',
           style: TextStyle(
             color: const Color(0xFF8B0000),
             fontWeight: FontWeight.bold,
             fontSize: 20,
           ),
         ),
-        backgroundColor: const Color(0xFFF5E9D4), // Background color for app bar
-        automaticallyImplyLeading: false, // Remove default back button
+        backgroundColor: const Color(0xFFF5E9D4),
+        automaticallyImplyLeading: false,
         centerTitle: true,
         actions: [
           IconButton(
             icon: Icon(Icons.logout, color: const Color(0xFF8B0000)),
             onPressed: () {
-              Navigator.popUntil(context, (route) => route.isFirst); // Logout action
+              Navigator.popUntil(context, (route) => route.isFirst);
             },
           ),
         ],
       ),
       body: StreamBuilder<List<Post>>(
-        stream: _fetchPosts(), // Stream of posts from Firestore
+        stream: _fetchPosts(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator()); // Show loading indicator
+            return Center(child: CircularProgressIndicator());
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text("No posts available.")); // Show message if no posts
+            return Center(child: Text("No posts available."));
           }
 
           final posts = snapshot.data!;
+          debugPrint("Fetched ${posts.length} posts from Firestore."); // Debug print to track the number of posts
+          
           return ListView.builder(
             itemCount: posts.length,
             itemBuilder: (context, index) {
@@ -114,19 +123,18 @@ class _FeedPageState extends State<FeedPage> {
                     children: [
                       CircleAvatar(
                         radius: 20,
-                        backgroundColor: Colors.grey[300], // Placeholder avatar for each post
+                        backgroundColor: Colors.grey[300],
                         child: Icon(Icons.person, color: Colors.grey[600]),
                       ),
                       SizedBox(width: 8),
                       Text(
-                        post.name, // Display the post author's name
+                        post.name,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                         ),
                       ),
                       SizedBox(width: 8),
-                      // Display formatted timestamp next to name
                       Text(
                         post.timestamp != null
                             ? _formatTimestamp(post.timestamp!)
@@ -142,7 +150,7 @@ class _FeedPageState extends State<FeedPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       SizedBox(height: 8),
-                      Text(post.description), // Display post description
+                      Text(post.description),
                     ],
                   ),
                 ),
@@ -154,16 +162,16 @@ class _FeedPageState extends State<FeedPage> {
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 80.0),
         child: FloatingActionButton(
-          onPressed: _showAddPostDialog, // Show dialog to add new post
+          onPressed: _showAddPostDialog,
           child: Icon(Icons.add, color: Colors.white),
           backgroundColor: const Color(0xFF8B0000),
-          tooltip: 'Add Post', // Tooltip for button
+          tooltip: 'Add Post',
           elevation: 4.0,
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: const Color(0xFFF5E9D4), // Color for navigation bar
+        backgroundColor: const Color(0xFFF5E9D4),
         currentIndex: _selectedIndex,
         selectedItemColor: const Color(0xFF8B0000),
         unselectedItemColor: Colors.grey,
@@ -171,38 +179,35 @@ class _FeedPageState extends State<FeedPage> {
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
-            label: 'Feed', // Label for Feed tab
+            label: 'Feed',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.warning),
-            label: 'Emergency', // Label for Emergency tab
+            label: 'Emergency',
           ),
         ],
       ),
     );
   }
 
-  // Helper function to format timestamp to a readable format
   String _formatTimestamp(Timestamp timestamp) {
     final date = timestamp.toDate();
     return "${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute}";
   }
 }
 
-// Class to represent each post item
 class Post {
-  final String name; // Name of post author
-  final String description; // Description content of post
-  final Timestamp? timestamp; // Timestamp of post creation
+  final String name;
+  final String description;
+  final Timestamp? timestamp;
 
   Post({required this.name, required this.description, this.timestamp});
 
-  // Factory constructor to create a Post instance from Firestore data
   factory Post.fromFirestore(DocumentSnapshot doc) {
     return Post(
       name: doc['name'],
       description: doc['description'],
-      timestamp: doc['timestamp'], // Get timestamp from Firestore document
+      timestamp: doc['timestamp'],
     );
   }
 }
