@@ -9,12 +9,10 @@ class FeedPage extends StatefulWidget {
 }
 
 class _FeedPageState extends State<FeedPage> {
-  int _selectedIndex = 0;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  int _selectedIndex = 0; // Track the selected item in the bottom navigation bar
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance; // Firestore instance for database operations
 
-  // Track if a post is currently being added to prevent duplicates
-  bool _isPosting = false;
-
+  // Stream to listen for updates to posts in Firestore, sorted by timestamp in descending order
   Stream<List<Post>> _fetchPosts() {
     return _firestore
         .collection('posts')
@@ -27,30 +25,24 @@ class _FeedPageState extends State<FeedPage> {
 
   // Modify the method to add a new post with a check for duplicate calls
   Future<void> _addPost(String name, String description) async {
-    if (_isPosting) return; // Prevent multiple posts from being added at once
-    setState(() {
-      _isPosting = true;
-    });
-    
     try {
       await _firestore.collection('posts').add({
         'name': name,
         'description': description,
-        'timestamp': FieldValue.serverTimestamp(),
-        'userType': 'student',
+        'timestamp': FieldValue.serverTimestamp(), // Auto-generated server timestamp
+        'userType': 'student', // Label posts from students
       });
-      print("Post added successfully!");
+      print("Post added successfully!"); // Debug log for successful post addition
     } catch (e) {
-      print("Error adding post: $e");
-    } finally {
-      setState(() {
-        _isPosting = false; // Reset posting state after completion
-      });
+      print("Error adding post: $e"); // Debug log for errors
     }
   }
 
   // Show dialog to add a new post
   void _showAddPostDialog() async {
+    if (_isAddingPost)
+      return; // Prevent opening dialog if already adding a post
+
     await Navigator.push(
       context,
       MaterialPageRoute(
@@ -85,14 +77,14 @@ class _FeedPageState extends State<FeedPage> {
             fontSize: 20,
           ),
         ),
-        backgroundColor: const Color(0xFFF5E9D4),
-        automaticallyImplyLeading: false,
+        backgroundColor: const Color(0xFFF5E9D4), // Background color for app bar
+        automaticallyImplyLeading: false, // Remove default back button
         centerTitle: true,
         actions: [
           IconButton(
             icon: Icon(Icons.logout, color: const Color(0xFF8B0000)),
             onPressed: () {
-              Navigator.popUntil(context, (route) => route.isFirst);
+              Navigator.popUntil(context, (route) => route.isFirst); // Logout action
             },
           ),
         ],
@@ -101,10 +93,10 @@ class _FeedPageState extends State<FeedPage> {
         stream: _fetchPosts(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return Center(child: CircularProgressIndicator()); // Show loading indicator
           }
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text("No posts available."));
+            return Center(child: Text("No posts available.")); // Show message if no posts
           }
 
           final posts = snapshot.data!;
@@ -123,7 +115,7 @@ class _FeedPageState extends State<FeedPage> {
                     children: [
                       CircleAvatar(
                         radius: 20,
-                        backgroundColor: Colors.grey[300],
+                        backgroundColor: Colors.grey[300], // Placeholder avatar for each post
                         child: Icon(Icons.person, color: Colors.grey[600]),
                       ),
                       SizedBox(width: 8),
