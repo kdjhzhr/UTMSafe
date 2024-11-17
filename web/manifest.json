@@ -1,6 +1,6 @@
 {
-    "name": "utmsafeapp",
-    "short_name": "utmsafeapp",
+    "name": "utmsafe",
+    "short_name": "utmsafe",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

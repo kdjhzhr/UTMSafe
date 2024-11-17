@@ -67,7 +67,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '1013666372928',
     projectId: 'utmsafe-9825c',
     storageBucket: 'utmsafe-9825c.firebasestorage.app',
-    iosBundleId: 'com.guardians.utmsafeapp',
+    iosBundleId: 'com.guardians.utmsafe',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
@@ -76,6 +76,6 @@ class DefaultFirebaseOptions {
     messagingSenderId: '1013666372928',
     projectId: 'utmsafe-9825c',
     storageBucket: 'utmsafe-9825c.firebasestorage.app',
-    iosBundleId: 'com.guardians.utmsafeapp',
+    iosBundleId: 'com.guardians.utmsafe',
   );
 }
