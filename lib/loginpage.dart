@@ -1,125 +1,195 @@
 import 'package:flutter/material.dart';
-import 'studentfeedpage.dart'; // Import the Student FeedPage for student navigation
-import 'policefeedpage.dart'; // Import the Police FeedPage for auxiliary police navigation
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'studentfeedpage.dart'; // Import the FeedPage for students
+import 'policefeedpage.dart'; // Import the PoliceInterface for police
+import 'registerpage.dart';
 
-// This is the main LoginPage widget where users will see the login interface
-class LoginPage extends StatelessWidget {
-  const LoginPage({super.key});
+class LoginPage extends StatefulWidget {
+  const LoginPage({Key? key}) : super(key: key);
+
+  @override
+  _LoginPageState createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:
-          const Color(0xFFF5E9D4), // Background color for the login page
+      backgroundColor: const Color(0xFFF5E9D4),
       body: Center(
-        child: Padding(
-          padding:
-              const EdgeInsets.all(16.0), // Add padding around the login form
-          child: const LoginForm(), // Display the LoginForm widget
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment
+                  .start, // Start alignment to move everything up
+              children: [
+                // Image instead of CircleAvatar for logo
+                Image.asset(
+                  'assets/utmsafelogo.png', // Replace with your image path
+                  width: 200, // Adjust the width of your image
+                  height: 200, // Adjust the height of your image
+                ),
+                const SizedBox(height: 10), // Reduced space below the logo
+
+                const Text(
+                  'Welcome',
+                  style: TextStyle(
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Roboto',
+                  ),
+                ),
+                const SizedBox(
+                    height: 30), // Reduced space between title and input fields
+
+                // Username text field with reduced size
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: TextField(
+                    controller: emailController,
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.account_circle),
+                      labelText: 'Username',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Colors.grey),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFF8B0000)),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Password text field with reduced size
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: TextField(
+                    controller: passwordController,
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.lock),
+                      labelText: 'Password',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Colors.grey),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFF8B0000)),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Login button with custom style and gradient
+                ElevatedButton(
+                  onPressed: _handleLogin,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF8B0000),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 32, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    elevation: 5, // Add shadow for depth
+                  ),
+                  child: const Text(
+                    'Log In',
+                    style: TextStyle(fontFamily: 'Roboto', color: Colors.white),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Navigation link to register page
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const RegisterPage(),
+                      ),
+                    );
+                  },
+                  child: const Text(
+                    'Register a New Account',
+                    style: TextStyle(fontSize: 16, color: Color(0xFF8B0000)),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
-}
 
-// This widget handles the login form functionality, including user selection and login button
-class LoginForm extends StatefulWidget {
-  const LoginForm({super.key});
+  void _handleLogin() async {
+    final username = emailController.text.trim();
+    final password = passwordController.text.trim();
 
-  @override
-  _LoginFormState createState() => _LoginFormState();
-}
-
-class _LoginFormState extends State<LoginForm> {
-  String?
-      userType; // Stores the selected user type (either student or auxiliary police)
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment:
-          MainAxisAlignment.center, // Center the form elements vertically
-      children: [
-        // Display the UTMSafe logo
-        Image.asset(
-          'assets/utmsafelogo.png',
-          height: 200,
-          width: 200,
-        ),
-        const SizedBox(height: 24), // Add space below the logo
-        const Text(
-          'Log in as:', // Label prompting user to select a role
-          style: TextStyle(fontSize: 18, fontFamily: 'Roboto'),
-        ),
-        const SizedBox(height: 16), // Space between label and user options
-        _buildUserTypeOption('UTM Auxiliary Police',
-            'auxiliary_police'), // Option for auxiliary police role
-        _buildUserTypeOption(
-            'UTM Student', 'student'), // Option for student role
-        const SizedBox(height: 24), // Space between options and login button
-
-        // Login button which calls _handleLogin when pressed
-        ElevatedButton(
-          onPressed: _handleLogin,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF8B0000), // Set button color
-            padding: const EdgeInsets.symmetric(
-                horizontal: 32, vertical: 12), // Button padding
-            shape: RoundedRectangleBorder(
-              borderRadius:
-                  BorderRadius.circular(24), // Rounded corners for the button
-            ),
-          ),
-          child: const Text(
-            'LOG IN',
-            style: TextStyle(fontFamily: 'Roboto', color: Colors.white),
-          ),
-        ),
-        const SizedBox(height: 24), // Space below the login button
-
-        // Display an additional image below the login button
-        Image.asset(
-          'assets/loginpic.png',
-          height: 150,
-          width: 150,
-        ),
-      ],
-    );
-  }
-
-  // Helper widget to build radio button options for user type selection
-  Widget _buildUserTypeOption(String title, String value) {
-    return RadioListTile(
-      title: Text(title), // Display title (e.g., UTM Auxiliary Police)
-      value: value, // Set the value for the radio button
-      groupValue: userType, // Associate with the selected userType
-      onChanged: (value) {
-        setState(() {
-          userType =
-              value as String?; // Update userType when option is selected
-        });
-      },
-    );
-  }
-
-  // Handles the login action based on the selected user type
-  void _handleLogin() {
-    if (userType == 'student') {
-      // Navigate to the student FeedPage if user type is student
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => FeedPage(), // FeedPage for students
-        ),
+    if (username.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter username and password')),
       );
-    } else if (userType == 'auxiliary_police') {
-      // Navigate to the police interface if user type is auxiliary police
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) =>
-              const PoliceInterface(), // Police interface page
-        ),
+      return;
+    }
+
+    try {
+      // Fetch the user's email based on the username from Firestore
+      final userSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('username', isEqualTo: username)
+          .get();
+
+      if (userSnapshot.docs.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Username not found')),
+        );
+        return;
+      }
+
+      final email = userSnapshot.docs.first.data()['email'];
+
+      // Authenticate the user with Firebase Authentication using email and password
+      final UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(email: email, password: password);
+
+      // Fetch the user's role from Firestore using the UID
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userCredential.user?.uid)
+          .get();
+
+      final role = userDoc.data()?['role'];
+
+      // Navigate based on the role
+      if (role == 'student') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => FeedPage()),
+        );
+      } else if (role == 'auxiliary_police') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const PoliceInterface()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invalid role detected')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
       );
     }
   }
