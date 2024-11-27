@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:utmsafe/policefeedpage.dart';
 import 'firebase_options.dart';
 import 'loginpage.dart';
+import 'studentfeedpage.dart'; // Import StudentFeedPage
+import 'policefeedpage.dart'; // Import SOS page (if you have one)
 
 Future<void> main() async {
-  // Ensure that Flutter bindings are initialized first
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Initialize Firebase with the options from your firebase_options.dart
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-
-  // Run the app after Firebase is initialized
   runApp(const MyApp());
 }
 
@@ -24,12 +22,16 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'UTMSafe',
       theme: ThemeData(
-        // Customize theme
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      // Set LoginPage as the initial screen
-      home: const LoginPage(),
+      initialRoute: '/login',
+      routes: {
+        '/login': (context) => const LoginPage(),
+        '/student_feed': (context) => const FeedPage(),
+        '/sos': (context) =>
+            const PoliceInterface(), // Add this route if needed
+      },
     );
   }
 }

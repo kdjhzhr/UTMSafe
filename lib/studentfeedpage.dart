@@ -16,10 +16,10 @@ class _FeedPageState extends State<FeedPage> {
   int _selectedIndex = 0;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  String? _username; 
+  String? _username;
   bool _isAddingPost = false;
 
-   @override
+  @override
   void initState() {
     super.initState();
     _fetchUsername();
@@ -51,7 +51,10 @@ class _FeedPageState extends State<FeedPage> {
       for (var doc in snapshot.docs) {
         var post = Post.fromFirestore(doc);
         // Fetch comments for each post
-        final commentsSnapshot = await doc.reference.collection('comments').orderBy('timestamp').get();
+        final commentsSnapshot = await doc.reference
+            .collection('comments')
+            .orderBy('timestamp')
+            .get();
         post.comments = commentsSnapshot.docs.map((commentDoc) {
           return Comment.fromFirestore(commentDoc);
         }).toList();
@@ -61,7 +64,8 @@ class _FeedPageState extends State<FeedPage> {
     }
   }
 
-  Future<void> _addPost(String name, String description, String? photoUrl) async {
+  Future<void> _addPost(
+      String name, String description, String? photoUrl) async {
     if (_isAddingPost) return;
 
     setState(() {
@@ -88,11 +92,15 @@ class _FeedPageState extends State<FeedPage> {
     }
   }
 
-   Future<void> _addCommentToPost(String postId, String comment) async {
+  Future<void> _addCommentToPost(String postId, String comment) async {
     try {
       final timestamp = FieldValue.serverTimestamp();
 
-      await _firestore.collection('posts').doc(postId).collection('comments').add({
+      await _firestore
+          .collection('posts')
+          .doc(postId)
+          .collection('comments')
+          .add({
         'comment': comment,
         'userName': _username ?? 'Unknown', // Use the fetched username
         'timestamp': timestamp,
@@ -113,7 +121,8 @@ class _FeedPageState extends State<FeedPage> {
         return AlertDialog(
           content: TextField(
             controller: _commentController,
-            decoration: const InputDecoration(hintText: "Enter your comment here"),
+            decoration:
+                const InputDecoration(hintText: "Enter your comment here"),
           ),
           actions: [
             TextButton(
@@ -156,8 +165,14 @@ class _FeedPageState extends State<FeedPage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.logout, color: Color(0xFF8B0000)),
-            onPressed: () {
-              Navigator.popUntil(context, (route) => route.isFirst);
+            onPressed: () async {
+              try {
+                await _auth.signOut(); // Log out the user
+                Navigator.pushNamedAndRemoveUntil(context, '/login',
+                    (route) => false); // Navigate to the login page
+              } catch (e) {
+                print("Error during logout: $e");
+              }
             },
           ),
         ],
@@ -236,42 +251,47 @@ class _FeedPageState extends State<FeedPage> {
                             color: Colors.grey,
                             tooltip: 'Comments',
                           ),
-                          Text(post.comments.isEmpty ? '0' : post.comments.length.toString()),
+                          Text(post.comments.isEmpty
+                              ? '0'
+                              : post.comments.length.toString()),
                         ],
                       ),
                       if (post.comments.isNotEmpty) ...[
-  ExpansionTile(
-  title: const Text(
-    "View Comments",
-    style: TextStyle(color: Colors.grey),
-  ),
-  children: post.comments.map((comment) {
-    return ListTile(
-      leading: CircleAvatar(
-        radius: 20,
-        backgroundColor: Colors.grey[300],
-        child: const Icon(Icons.person, color: Colors.grey),
-      ),
-      title: Row(
-        children: [
-          Text(
-            comment.userName,
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(width: 8), // Add some spacing between username and timestamp
-          Text(
-            _formatTimestamp(comment.timestamp),
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
-          ),
-        ],
-      ),
-      subtitle: Text(comment.comment),
-    );
-  }).toList(),
-),
-
-],
-
+                        ExpansionTile(
+                          title: const Text(
+                            "View Comments",
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                          children: post.comments.map((comment) {
+                            return ListTile(
+                              leading: CircleAvatar(
+                                radius: 20,
+                                backgroundColor: Colors.grey[300],
+                                child: const Icon(Icons.person,
+                                    color: Colors.grey),
+                              ),
+                              title: Row(
+                                children: [
+                                  Text(
+                                    comment.userName,
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(
+                                      width:
+                                          8), // Add some spacing between username and timestamp
+                                  Text(
+                                    _formatTimestamp(comment.timestamp),
+                                    style: const TextStyle(
+                                        fontSize: 12, color: Colors.grey),
+                                  ),
+                                ],
+                              ),
+                              subtitle: Text(comment.comment),
+                            );
+                          }).toList(),
+                        ),
+                      ],
                       TextButton(
                         onPressed: () => _addCommentDialog(post.id),
                         child: const Text(
@@ -291,24 +311,23 @@ class _FeedPageState extends State<FeedPage> {
         },
       ),
       floatingActionButton: Padding(
-  padding: const EdgeInsets.only(bottom: 80.0),
-  child: FloatingActionButton(
-    onPressed: () {
-      // Navigate to AddPostScreen when the button is clicked
-      Navigator.push(
+        padding: const EdgeInsets.only(bottom: 80.0),
+        child: FloatingActionButton(
+          onPressed: () {
+            // Navigate to AddPostScreen when the button is clicked
+            Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => AddPostScreen(onPostAdded: _addPost),
               ),
-      );
-    },
-    backgroundColor: const Color(0xFF8B0000),
-    tooltip: 'Add Post',
-    elevation: 4.0,
-    child: const Icon(Icons.add, color: Colors.white),
-  ),
-),
-
+            );
+          },
+          backgroundColor: const Color(0xFF8B0000),
+          tooltip: 'Add Post',
+          elevation: 4.0,
+          child: const Icon(Icons.add, color: Colors.white),
+        ),
+      ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: const Color(0xFFF5E9D4),
@@ -337,18 +356,19 @@ class _FeedPageState extends State<FeedPage> {
   }
 
   void _onItemTapped(int index) {
-  setState(() {
-    _selectedIndex = index;
-  });
+    setState(() {
+      _selectedIndex = index;
+    });
 
-  if (index == 1) { // If "Emergency" is tapped
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const SosPage()), // Navigate to SosPage
-    );
+    if (index == 1) {
+      // If "Emergency" is tapped
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => const SosPage()), // Navigate to SosPage
+      );
+    }
   }
-}
-
 
   void _showAddPostDialog() {
     final _descriptionController = TextEditingController();

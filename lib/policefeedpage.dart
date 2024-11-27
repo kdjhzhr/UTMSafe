@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'report.dart';
 import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class PoliceInterface extends StatefulWidget {
   const PoliceInterface({super.key});
@@ -11,6 +12,7 @@ class PoliceInterface extends StatefulWidget {
 }
 
 class _PoliceInterfaceState extends State<PoliceInterface> {
+  final FirebaseAuth _auth = FirebaseAuth.instance; // Initialize FirebaseAuth
   int _selectedIndex = 0;
 
   // List of pages for navigation
@@ -43,10 +45,16 @@ class _PoliceInterfaceState extends State<PoliceInterface> {
         actions: _selectedIndex == 0
             ? [
                 IconButton(
-                  icon: const Icon(Icons.logout),
-                  color: const Color(0xFF8B0000),
-                  onPressed: () {
-                    Navigator.popUntil(context, (route) => route.isFirst);
+                  icon: const Icon(Icons.logout,
+                      color: Color(0xFF8B0000)), // Logout icon
+                  onPressed: () async {
+                    try {
+                      await _auth.signOut(); // Log out the user
+                      Navigator.pushNamedAndRemoveUntil(context, '/login',
+                          (route) => false); // Navigate to the login page
+                    } catch (e) {
+                      print("Error during logout: $e");
+                    }
                   },
                 ),
               ]
