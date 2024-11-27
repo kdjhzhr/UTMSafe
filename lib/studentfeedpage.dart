@@ -19,7 +19,7 @@ class _FeedPageState extends State<FeedPage> {
   String? _username; 
   bool _isAddingPost = false;
 
-   @override
+  @override
   void initState() {
     super.initState();
     _fetchUsername();
@@ -88,7 +88,7 @@ class _FeedPageState extends State<FeedPage> {
     }
   }
 
-   Future<void> _addCommentToPost(String postId, String comment) async {
+  Future<void> _addCommentToPost(String postId, String comment) async {
     try {
       final timestamp = FieldValue.serverTimestamp();
 
@@ -136,6 +136,17 @@ class _FeedPageState extends State<FeedPage> {
         );
       },
     );
+  }
+
+  Future<void> _incrementLikeCount(String postId, int newLikeCount) async {
+    try {
+      await _firestore.collection('posts').doc(postId).update({
+        'likes': newLikeCount, // Update the like count in Firestore
+      });
+      print("Like count updated successfully!");
+    } catch (e) {
+      print("Error updating like count: $e");
+    }
   }
 
   @override
@@ -223,7 +234,12 @@ class _FeedPageState extends State<FeedPage> {
                       Row(
                         children: [
                           IconButton(
-                            onPressed: () {},
+                            onPressed: () async {
+                              setState(() {
+                                post.likes += 1; // Update the like count locally
+                              });
+                              await _incrementLikeCount(post.id, post.likes); // Update Firestore in the background
+                            },
                             icon: const Icon(Icons.favorite_border),
                             color: Colors.red,
                             tooltip: 'Like',
@@ -240,38 +256,36 @@ class _FeedPageState extends State<FeedPage> {
                         ],
                       ),
                       if (post.comments.isNotEmpty) ...[
-  ExpansionTile(
-  title: const Text(
-    "View Comments",
-    style: TextStyle(color: Colors.grey),
-  ),
-  children: post.comments.map((comment) {
-    return ListTile(
-      leading: CircleAvatar(
-        radius: 20,
-        backgroundColor: Colors.grey[300],
-        child: const Icon(Icons.person, color: Colors.grey),
-      ),
-      title: Row(
-        children: [
-          Text(
-            comment.userName,
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(width: 8), // Add some spacing between username and timestamp
-          Text(
-            _formatTimestamp(comment.timestamp),
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
-          ),
-        ],
-      ),
-      subtitle: Text(comment.comment),
-    );
-  }).toList(),
-),
-
-],
-
+                        ExpansionTile(
+                          title: const Text(
+                            "View Comments",
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                          children: post.comments.map((comment) {
+                            return ListTile(
+                              leading: CircleAvatar(
+                                radius: 20,
+                                backgroundColor: Colors.grey[300],
+                                child: const Icon(Icons.person, color: Colors.grey),
+                              ),
+                              title: Row(
+                                children: [
+                                  Text(
+                                    comment.userName,
+                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    _formatTimestamp(comment.timestamp),
+                                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                  ),
+                                ],
+                              ),
+                              subtitle: Text(comment.comment),
+                            );
+                          }).toList(),
+                        ),
+                      ],
                       TextButton(
                         onPressed: () => _addCommentDialog(post.id),
                         child: const Text(
@@ -291,120 +305,50 @@ class _FeedPageState extends State<FeedPage> {
         },
       ),
       floatingActionButton: Padding(
-  padding: const EdgeInsets.only(bottom: 80.0),
-  child: FloatingActionButton(
-    onPressed: () {
-      // Navigate to AddPostScreen when the button is clicked
-      Navigator.push(
+        padding: const EdgeInsets.only(bottom: 80.0),
+        child: FloatingActionButton(
+          onPressed: () {
+            // Navigate to AddPostScreen when the button is clicked
+            Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => AddPostScreen(onPostAdded: _addPost),
               ),
-      );
-    },
-    backgroundColor: const Color(0xFF8B0000),
-    tooltip: 'Add Post',
-    elevation: 4.0,
-    child: const Icon(Icons.add, color: Colors.white),
-  ),
-),
-
-      floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: const Color(0xFFF5E9D4),
-        currentIndex: _selectedIndex,
-        selectedItemColor: const Color(0xFF8B0000),
-        unselectedItemColor: Colors.grey,
-        onTap: _onItemTapped,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Feed',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.warning),
-            label: 'Emergency',
-          ),
-        ],
+            );
+          },
+          backgroundColor: const Color(0xFF8B0000),
+          tooltip: 'Add Post',
+          elevation: 8,
+          child: const Icon(Icons.add),
+        ),
       ),
     );
   }
 
   String _formatTimestamp(Timestamp timestamp) {
-    final dateTime = timestamp.toDate();
-    final formatter = DateFormat('dd/MM/yyyy  HH:mm');
-    return formatter.format(dateTime);
-  }
-
-  void _onItemTapped(int index) {
-  setState(() {
-    _selectedIndex = index;
-  });
-
-  if (index == 1) { // If "Emergency" is tapped
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const SosPage()), // Navigate to SosPage
-    );
-  }
-}
-
-
-  void _showAddPostDialog() {
-    final _descriptionController = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          content: TextField(
-            controller: _descriptionController,
-            decoration: const InputDecoration(hintText: "Enter description"),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text("Cancel"),
-            ),
-            TextButton(
-              onPressed: () {
-                final description = _descriptionController.text.trim();
-                if (description.isNotEmpty) {
-                  _addPost(
-                    _auth.currentUser?.displayName ?? 'Unknown',
-                    description,
-                    null, // No photo functionality yet
-                  );
-                }
-                Navigator.pop(context);
-              },
-              child: const Text("Post"),
-            ),
-          ],
-        );
-      },
-    );
+    final date = DateTime.fromMillisecondsSinceEpoch(timestamp.seconds * 1000);
+    final formatter = DateFormat('yyyy-MM-dd HH:mm');
+    return formatter.format(date);
   }
 }
 
 class Post {
-  String id;
-  String name;
-  String description;
-  String? photoUrl;
+  final String id;
+  final String name;
+  final String description;
+  final String? photoUrl;
+  final Timestamp timestamp;
   int likes;
   List<Comment> comments;
-  Timestamp timestamp;
 
   Post({
     required this.id,
     required this.name,
     required this.description,
+    this.photoUrl,
+    required this.timestamp,
     required this.likes,
     required this.comments,
-    required this.timestamp,
-    this.photoUrl,
   });
 
   factory Post.fromFirestore(DocumentSnapshot doc) {
@@ -414,30 +358,30 @@ class Post {
       name: data['name'] ?? '',
       description: data['description'] ?? '',
       photoUrl: data['photoUrl'],
+      timestamp: data['timestamp'],
       likes: data['likes'] ?? 0,
       comments: [],
-      timestamp: data['timestamp'],
     );
   }
 }
 
 class Comment {
-  String comment;
-  String userName;
-  Timestamp timestamp;
+  final String userName;
+  final String comment;
+  final Timestamp timestamp;
 
   Comment({
-    required this.comment,
     required this.userName,
+    required this.comment,
     required this.timestamp,
   });
 
   factory Comment.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return Comment(
-      comment: data['comment'] ?? '',
       userName: data['userName'] ?? '',
-      timestamp: data['timestamp'],
+      comment: data['comment'] ?? '',
+      timestamp: data['timestamp'] ?? Timestamp.now(),
     );
   }
 }
