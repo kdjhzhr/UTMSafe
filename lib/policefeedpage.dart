@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'report.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'report.dart';
 
 class PoliceInterface extends StatefulWidget {
   const PoliceInterface({super.key});
@@ -12,27 +12,14 @@ class PoliceInterface extends StatefulWidget {
 }
 
 class _PoliceInterfaceState extends State<PoliceInterface> {
-  final FirebaseAuth _auth = FirebaseAuth.instance; // Initialize FirebaseAuth
   int _selectedIndex = 0;
-
-  // List of pages for navigation
-  final List<Widget> _pages = [
-    const FeedScreen(), // Feed screen with Firestore integration
-    const Report(), // Report screen
-  ];
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF5E9D4),
-        centerTitle: true,
         title: const Text(
           'UTMSafe',
           style: TextStyle(
@@ -41,26 +28,26 @@ class _PoliceInterfaceState extends State<PoliceInterface> {
             fontSize: 20,
           ),
         ),
+        backgroundColor: const Color(0xFFF5E9D4),
         automaticallyImplyLeading: false,
-        actions: _selectedIndex == 0
-            ? [
-                IconButton(
-                  icon: const Icon(Icons.logout,
-                      color: Color(0xFF8B0000)), // Logout icon
-                  onPressed: () async {
-                    try {
-                      await _auth.signOut(); // Log out the user
-                      Navigator.pushNamedAndRemoveUntil(context, '/login',
-                          (route) => false); // Navigate to the login page
-                    } catch (e) {
-                      print("Error during logout: $e");
-                    }
-                  },
-                ),
-              ]
-            : [],
+        centerTitle: true,
+        actions: [
+          if (_selectedIndex == 0)
+            IconButton(
+              icon: const Icon(Icons.logout, color: Color(0xFF8B0000)),
+              onPressed: () async {
+                try {
+                  await _auth.signOut(); // Log out the user
+                  Navigator.pushNamedAndRemoveUntil(
+                      context, '/login', (route) => false); // Navigate to login
+                } catch (e) {
+                  print("Error during logout: $e");
+                }
+              },
+            ),
+        ],
       ),
-      body: _pages[_selectedIndex],
+      body: _selectedIndex == 0 ? const FeedScreen() : const Report(),
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: const Color(0xFFF5E9D4),
         items: const [
@@ -70,7 +57,11 @@ class _PoliceInterfaceState extends State<PoliceInterface> {
         currentIndex: _selectedIndex,
         selectedItemColor: const Color(0xFF8B0000),
         unselectedItemColor: Colors.grey,
-        onTap: _onItemTapped,
+        onTap: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
       ),
     );
   }
@@ -80,21 +71,33 @@ class _PoliceInterfaceState extends State<PoliceInterface> {
 class FeedScreen extends StatelessWidget {
   const FeedScreen({super.key});
 
-  // Stream to listen for posts from Firestore
-  Stream<List<Post>> _fetchPosts() {
-    return FirebaseFirestore.instance
+  Stream<List<Post>> _fetchPosts() async* {
+    final snapshots = FirebaseFirestore.instance
         .collection('posts')
         .orderBy('timestamp', descending: true)
-        .snapshots()
-        .map((snapshot) {
-      return snapshot.docs.map((doc) => Post.fromFirestore(doc)).toList();
-    });
+        .snapshots();
+
+    await for (var snapshot in snapshots) {
+      List<Post> posts = [];
+      for (var doc in snapshot.docs) {
+        var post = Post.fromFirestore(doc);
+        final commentsSnapshot = await doc.reference
+            .collection('comments')
+            .orderBy('timestamp')
+            .get();
+        post.comments = commentsSnapshot.docs.map((commentDoc) {
+          return Comment.fromFirestore(commentDoc);
+        }).toList();
+        posts.add(post);
+      }
+      yield posts;
+    }
   }
 
-  // Format timestamp on feed
   String _formatTimestamp(Timestamp timestamp) {
-    final date = timestamp.toDate();
-    return DateFormat('dd/MM/yyyy HH:mm').format(date);
+    final dateTime = timestamp.toDate();
+    final formatter = DateFormat('dd/MM/yyyy  HH:mm');
+    return formatter.format(dateTime);
   }
 
   @override
@@ -106,15 +109,7 @@ class FeedScreen extends StatelessWidget {
           return const Center(child: CircularProgressIndicator());
         }
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return const Center(
-            child: Text(
-              "No posts yet",
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
-              ),
-            ),
-          );
+          return const Center(child: Text("No posts available."));
         }
 
         final posts = snapshot.data!;
@@ -125,37 +120,103 @@ class FeedScreen extends StatelessWidget {
             return Card(
               elevation: 4,
               margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-              child: ListTile(
-                contentPadding: const EdgeInsets.all(8),
-                title: Row(
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    CircleAvatar(
-                      radius: 20,
-                      backgroundColor: Colors.grey[300],
-                      child: const Icon(Icons.person, color: Colors.grey),
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 20,
+                          backgroundColor: Colors.grey[300],
+                          child: const Icon(Icons.person, color: Colors.grey),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          post.name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          post.timestamp != null
+                              ? _formatTimestamp(post.timestamp!)
+                              : '',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      post.name,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                    const SizedBox(height: 8),
+                    Text(post.description),
+                    if (post.photoUrl != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Image.network(post.photoUrl!),
                       ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        IconButton(
+                          onPressed: () {},
+                          icon: const Icon(Icons.favorite_border),
+                          color: Colors.red,
+                          tooltip: 'Like',
+                        ),
+                        Text(post.likes.toString()),
+                        const SizedBox(width: 16),
+                        IconButton(
+                          onPressed: () {},
+                          icon: const Icon(Icons.comment),
+                          color: Colors.grey,
+                          tooltip: 'Comments',
+                        ),
+                        Text(post.comments.isEmpty
+                            ? '0'
+                            : post.comments.length.toString()),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    // Display timestamp next to the name
-                    Text(
-                      post.timestamp != null
-                          ? _formatTimestamp(post.timestamp!)
-                          : '',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
+                    if (post.comments.isNotEmpty) ...[
+                      ExpansionTile(
+                        title: const Text(
+                          "View Comments",
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                        children: post.comments.map((comment) {
+                          return ListTile(
+                            leading: CircleAvatar(
+                              radius: 20,
+                              backgroundColor: Colors.grey[300],
+                              child: const Icon(Icons.person,
+                                  color: Colors.grey),
+                            ),
+                            title: Row(
+                              children: [
+                                Text(
+                                  comment.userName,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  _formatTimestamp(comment.timestamp),
+                                  style: const TextStyle(
+                                      fontSize: 12, color: Colors.grey),
+                                ),
+                              ],
+                            ),
+                            subtitle: Text(comment.comment),
+                          );
+                        }).toList(),
                       ),
-                    ),
+                    ],
                   ],
                 ),
-                subtitle: Text(post.description),
               ),
             );
           },
@@ -165,19 +226,56 @@ class FeedScreen extends StatelessWidget {
   }
 }
 
-// Define Post class to model Firestore data
 class Post {
-  final String name;
-  final String description;
-  final Timestamp? timestamp;
+  String id;
+  String name;
+  String description;
+  String? photoUrl;
+  int likes;
+  List<Comment> comments;
+  Timestamp timestamp;
 
-  Post({required this.name, required this.description, this.timestamp});
+  Post({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.likes,
+    required this.comments,
+    required this.timestamp,
+    this.photoUrl,
+  });
 
   factory Post.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
     return Post(
-      name: doc['name'],
-      description: doc['description'],
-      timestamp: doc['timestamp'],
+      id: doc.id,
+      name: data['name'] ?? '',
+      description: data['description'] ?? '',
+      photoUrl: data['photoUrl'],
+      likes: data['likes'] ?? 0,
+      comments: [],
+      timestamp: data['timestamp'],
+    );
+  }
+}
+
+class Comment {
+  String comment;
+  String userName;
+  Timestamp timestamp;
+
+  Comment({
+    required this.comment,
+    required this.userName,
+    required this.timestamp,
+  });
+
+  factory Comment.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return Comment(
+      comment: data['comment'] ?? '',
+      userName: data['userName'] ?? '',
+      timestamp: data['timestamp'],
     );
   }
 }
