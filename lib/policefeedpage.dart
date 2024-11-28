@@ -328,20 +328,7 @@ class FeedScreen extends StatelessWidget {
                           );
                         }).toList(),
                       ),
-                    ],
-
-                    // Add Comment Button below View Comments
-                    TextButton(
-                      onPressed: () => _addCommentDialog(context, post.id),
-                      child: const Text(
-                        "Add Comment",
-                        style: TextStyle(
-                          color: Color(0xFF8B0000),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    )
-                    
+                    ],  
                   ],
                 ),
               ),
