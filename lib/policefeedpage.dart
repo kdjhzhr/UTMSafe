@@ -85,20 +85,20 @@ class _PoliceInterfaceState extends State<PoliceInterface> {
         automaticallyImplyLeading: false,
         centerTitle: true,
         actions: [
-          if (_selectedIndex == 0)
-            IconButton(
-              icon: const Icon(Icons.logout, color: Color(0xFF8B0000)),
-              onPressed: () async {
-                try {
-                  await _auth.signOut();
-                  Navigator.pushNamedAndRemoveUntil(
-                      context, '/login', (route) => false);
-                } catch (e) {
-                  print("Error during logout: $e");
-                }
-              },
-            ),
-        ],
+              if (_selectedIndex == 0)
+                IconButton(
+                  icon: const Icon(Icons.logout, color: Color(0xFF8B0000)),
+                  onPressed: () async {
+                    try {
+                      await _auth.signOut(); // Sign out the user
+                      Navigator.pushNamedAndRemoveUntil(
+                          context, '/', (route) => false); // Navigate to login page
+                    } catch (e) {
+                      print("Error during logout: $e");
+                    }
+                  },
+                ),
+            ],
       ),
       body: _selectedIndex == 0
           ? FeedScreen(onAddComment: _addCommentToPost)
