@@ -109,32 +109,40 @@ class _AddPostScreenState extends State<AddPostScreen> {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextField(
-              controller: _descriptionController,
-              maxLines: null,
-              decoration: const InputDecoration(
-                hintText: 'Describe your post...',
-                border: InputBorder.none,
-                hintStyle: TextStyle(color: Colors.grey),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextField(
+                controller: _descriptionController,
+                maxLines: null,
+                decoration: const InputDecoration(
+                  hintText: 'Describe your post...',
+                  border: InputBorder.none,
+                  hintStyle: TextStyle(color: Colors.grey),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            TextButton.icon(
-              onPressed: _pickImage,
-              icon: const Icon(Icons.camera_alt, color: Colors.blue),
-              label: const Text(
-                'Upload Photo',
-                style: TextStyle(color: Colors.blue),
+              const SizedBox(height: 16),
+              TextButton.icon(
+                onPressed: _pickImage,
+                icon: const Icon(Icons.camera_alt, color: Colors.blue),
+                label: const Text(
+                  'Upload Photo',
+                  style: TextStyle(color: Colors.blue),
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            if (_imageUrl != null) Image.network(_imageUrl!),
-          ],
+              const SizedBox(height: 8),
+              if (_imageUrl != null)
+                Image.network(
+                  _imageUrl!,
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: 200, // Added fixed height for consistency
+                ),
+            ],
+          ),
         ),
       ),
     );
