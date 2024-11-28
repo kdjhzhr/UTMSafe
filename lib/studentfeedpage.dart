@@ -311,18 +311,6 @@ class _FeedPageState extends State<FeedPage> {
                     }).toList(),
                   ),
                 ],
-                
-                // Add Comment Button
-                TextButton(
-                  onPressed: () => _addCommentDialog(post.id),
-                  child: const Text(
-                    "Add Comment",
-                    style: TextStyle(
-                      color: Color(0xFF8B0000),
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
               ],
             ),
           ),
