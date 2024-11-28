@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'loginpage.dart';
+import 'policefeedpage.dart';
+import 'studentfeedpage.dart';
 
 Future<void> main() async {
   // Ensure that Flutter bindings are initialized first
@@ -28,8 +30,12 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      // Set LoginPage as the initial screen
-      home: const LoginPage(),
+      initialRoute: '/', // Set the initial route
+      routes: {
+        '/': (context) => const LoginPage(), 
+        '/policeFeed': (context) => const PoliceInterface(),
+        '/studentFeed': (context) => const FeedPage(), 
+      },
     );
   }
 }
