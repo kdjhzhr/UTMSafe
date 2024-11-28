@@ -64,54 +64,55 @@ class _FeedPageState extends State<FeedPage> {
     }
   }
 
-  Future<void> _addPost(
-      String name, String description, String? photoUrl) async {
-    if (_isAddingPost) return;
+  Future<void> _addPost(String name, String description, String? photoUrl) async {
+  if (_isAddingPost) return;
 
-    setState(() {
-      _isAddingPost = true;
+  setState(() {
+    _isAddingPost = true;
+  });
+
+  try {
+    await _firestore.collection('posts').add({
+      'name': name,
+      'description': description,
+      'photoUrl': photoUrl,
+      'timestamp': FieldValue.serverTimestamp(),
+      'userType': 'student',
+      'likes': 0,
+      'comments': [],
     });
 
-    try {
-      await _firestore.collection('posts').add({
-        'name': name,
-        'description': description,
-        'photoUrl': photoUrl,
-        'timestamp': FieldValue.serverTimestamp(),
-        'userType': 'student',
-        'likes': 0,
-        'comments': [],
-      });
-      print("Post added successfully!");
-    } catch (e) {
-      print("Error adding post: $e");
-    } finally {
-      setState(() {
-        _isAddingPost = false;
-      });
-    }
+    print("Post added successfully!");
+    // Trigger UI refresh immediately after adding a post
+    setState(() {}); // This will refresh the StreamBuilder and show the new post.
+  } catch (e) {
+    print("Error adding post: $e");
+  } finally {
+    setState(() {
+      _isAddingPost = false;
+    });
   }
+}
 
   Future<void> _addCommentToPost(String postId, String comment) async {
-    try {
-      final timestamp = FieldValue.serverTimestamp();
+  try {
+    final timestamp = FieldValue.serverTimestamp();
+    await _firestore
+        .collection('posts')
+        .doc(postId)
+        .collection('comments')
+        .add({
+      'comment': comment,
+      'userName': _username ?? 'Unknown', 
+      'timestamp': timestamp,
+    });
 
-      await _firestore
-          .collection('posts')
-          .doc(postId)
-          .collection('comments')
-          .add({
-        'comment': comment,
-        'userName': _username ?? 'Unknown', // Use the fetched username
-        'timestamp': timestamp,
-      });
-
-      print("Comment added successfully!");
-      setState(() {}); // Refresh UI if necessary
-    } catch (e) {
-      print("Error adding comment: $e");
-    }
+    print("Comment added successfully!");
+    setState(() {}); // This will ensure the UI updates to reflect the new comment
+  } catch (e) {
+    print("Error adding comment: $e");
   }
+}
 
   Future<void> _addLikeToPost(String postId, int currentLikes) async {
   try {
@@ -230,9 +231,7 @@ class _FeedPageState extends State<FeedPage> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      post.timestamp != null
-                          ? _formatTimestamp(post.timestamp!)
-                          : '',
+                      _formatTimestamp(post.timestamp),
                       style: const TextStyle(
                         fontSize: 12,
                         color: Colors.grey,
@@ -326,7 +325,7 @@ class _FeedPageState extends State<FeedPage> {
         child: FloatingActionButton(
           onPressed: () {
             // Navigate to AddPostScreen when the button is clicked
-            Navigator.push(
+            Navigator.pushReplacement(
               context,
               MaterialPageRoute(
                 builder: (context) => AddPostScreen(onPostAdded: _addPost),
@@ -373,7 +372,7 @@ class _FeedPageState extends State<FeedPage> {
 
     if (index == 1) {
       // If "Emergency" is tapped
-      Navigator.push(
+      Navigator.pushReplacement(
         context,
         MaterialPageRoute(
             builder: (context) => const SosPage()), // Navigate to SosPage
