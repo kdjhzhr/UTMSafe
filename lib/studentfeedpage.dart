@@ -174,19 +174,20 @@ class _FeedPageState extends State<FeedPage> {
         automaticallyImplyLeading: false,
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: Color(0xFF8B0000)),
-            onPressed: () async {
-              try {
-                await _auth.signOut(); // Log out the user
-                Navigator.pushNamedAndRemoveUntil(context, '/login',
-                    (route) => false); // Navigate to the login page
-              } catch (e) {
-                print("Error during logout: $e");
-              }
-            },
-          ),
-        ],
+            if (_selectedIndex == 0)
+              IconButton(
+                icon: const Icon(Icons.logout, color: Color(0xFF8B0000)),
+                onPressed: () async {
+                  try {
+                    await _auth.signOut(); // Sign out the user
+                    Navigator.pushNamedAndRemoveUntil(
+                        context, '/', (route) => false); // Navigate to login page
+                  } catch (e) {
+                    print("Error during logout: $e");
+                  }
+                },
+              ),
+          ],
       ),
       body: StreamBuilder<List<Post>>(
   stream: _fetchPosts(), // Make sure this fetches posts correctly
