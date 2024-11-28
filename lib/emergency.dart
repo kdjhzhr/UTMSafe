@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';  // Import Clipboard functionality
-import 'studentfeedpage.dart'; // Import FeedPage
+import 'package:flutter/services.dart';
+import 'studentfeedpage.dart'; // Import the FeedPage (or your Feed page)
+import 'safety.dart'; // Import the safety.dart file
 
 class SosPage extends StatefulWidget {
   const SosPage({super.key});
@@ -24,7 +25,7 @@ class _SosPageState extends State<SosPage> {
   void _copyToClipboard(String phoneNumber) {
     Clipboard.setData(ClipboardData(text: phoneNumber)).then((_) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Phone number copied to clipboard.')),
+        const SnackBar(content: Text('Phone number copied to clipboard.')),
       );
     });
   }
@@ -37,7 +38,12 @@ class _SosPageState extends State<SosPage> {
     if (_selectedIndex == 0) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => FeedPage()),
+        MaterialPageRoute(builder: (context) => FeedPage()), // Feed Page
+      );
+    } else if (_selectedIndex == 1) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => SosPage()), // Sos Page
       );
     }
   }
@@ -46,10 +52,10 @@ class _SosPageState extends State<SosPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
+        title: const Text(
           'UTMSafe',
           style: TextStyle(
-            color: const Color(0xFF8B0000),
+            color: Color(0xFF8B0000),
             fontWeight: FontWeight.bold,
             fontSize: 20,
           ),
@@ -61,10 +67,11 @@ class _SosPageState extends State<SosPage> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
+          // Emergency contact section
+          const Padding(
+            padding: EdgeInsets.all(16.0),
             child: Row(
-              children: const [
+              children: [
                 Icon(
                   Icons.phone_in_talk,
                   color: Color(0xFF8B0000),
@@ -91,11 +98,49 @@ class _SosPageState extends State<SosPage> {
                   title: Text(contact['name']!),
                   subtitle: Text(contact['phone']!),
                   trailing: IconButton(
-                    icon: Icon(Icons.copy, color: Color(0xFF8B0000)),
+                    icon: const Icon(Icons.copy, color: Color(0xFF8B0000)),
                     onPressed: () => _copyToClipboard(contact['phone']!),
                   ),
                 );
               },
+            ),
+          ),
+          const Divider(thickness: 2, color: Color(0xFF8B0000)),
+
+          // Bottom redirect link
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const Text(
+                  'Already called help? What need to do while waiting for help to come?',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.black,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => EarlyMeasurementPage(),
+                      ),
+                    );
+                  },
+                  child: const Text(
+                    'Take this early measurement tips',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF8B0000),
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
