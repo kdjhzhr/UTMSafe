@@ -4,6 +4,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:io';
+import 'studentfeedpage.dart';
 
 class AddPostScreen extends StatefulWidget {
   final Function(String, String, String?) onPostAdded;
@@ -18,6 +19,7 @@ class _AddPostScreenState extends State<AddPostScreen> {
   final _descriptionController = TextEditingController();
   String? _imageUrl;
   String? _username;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -64,8 +66,16 @@ class _AddPostScreenState extends State<AddPostScreen> {
   }
 
   void _postContent() {
-    final description = _descriptionController.text;
+    final description = _descriptionController.text.trim();
     final photoUrl = _imageUrl;
+
+    // Check if the description is empty and show an error if true
+    if (description.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a description')),
+      );
+      return;
+    }
 
     if (_username == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -74,8 +84,27 @@ class _AddPostScreenState extends State<AddPostScreen> {
       return;
     }
 
-    widget.onPostAdded(_username!, description, photoUrl);
-    Navigator.pop(context);
+    setState(() {
+      _isLoading = true;
+    });
+
+    // Call the provided onPostAdded function with the description (and photoUrl if any)
+    widget.onPostAdded(_username!, description, photoUrl).then((_) {
+      setState(() {
+        _isLoading = false;
+      });
+
+      // Close the screen and go back to the FeedPage
+      Navigator.pop(context);
+    }).catchError((e) {
+      setState(() {
+        _isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error posting. Please try again')),
+      );
+    });
   }
 
   @override
@@ -86,18 +115,23 @@ class _AddPostScreenState extends State<AddPostScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: TextButton(
-          onPressed: () => Navigator.pop(context),
-          style: TextButton.styleFrom(
-            padding: EdgeInsets.zero, // Remove default padding for alignment
+            onPressed: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => FeedPage()), 
+              );
+            },
+            style: TextButton.styleFrom(
+              padding: EdgeInsets.zero,
+            ),
+            child: Text(
+              'Cancel', // Label for cancel button
+              style: TextStyle(color: Colors.black, fontSize: 16),
+            ),
           ),
-          child: Text(
-            'Cancel', // Label for cancel button
-            style: TextStyle(color: Colors.black, fontSize: 16),
-          ),
-        ),
         actions: [
           TextButton(
-            onPressed: _postContent,
+            onPressed: _postContent, // Trigger the post action
             child: const Text(
               'Post',
               style: TextStyle(
@@ -126,7 +160,7 @@ class _AddPostScreenState extends State<AddPostScreen> {
               ),
               const SizedBox(height: 16),
               TextButton.icon(
-                onPressed: _pickImage,
+                onPressed: _pickImage, // Trigger the image picker
                 icon: const Icon(Icons.camera_alt, color: Colors.blue),
                 label: const Text(
                   'Upload Photo',
@@ -141,6 +175,8 @@ class _AddPostScreenState extends State<AddPostScreen> {
                   width: double.infinity,
                   height: 200, // Added fixed height for consistency
                 ),
+              if (_isLoading) // Show loading indicator while posting
+                const Center(child: CircularProgressIndicator()),
             ],
           ),
         ),
