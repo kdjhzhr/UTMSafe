@@ -64,66 +64,54 @@ class _FeedPageState extends State<FeedPage> {
     }
   }
 
-  Future<void> _addPost(String name, String description, String? photoUrl) async {
-  if (_isAddingPost) return;
+  Future<void> _addPost(
+      String name, String description, String? photoUrl) async {
+    if (_isAddingPost) return;
 
-  setState(() {
-    _isAddingPost = true;
-  });
-
-  try {
-    await _firestore.collection('posts').add({
-      'name': name,
-      'description': description,
-      'photoUrl': photoUrl,
-      'timestamp': FieldValue.serverTimestamp(),
-      'userType': 'student',
-      'likes': 0,
-      'comments': [],
-    });
-
-    print("Post added successfully!");
-    // Trigger UI refresh immediately after adding a post
-    setState(() {}); // This will refresh the StreamBuilder and show the new post.
-  } catch (e) {
-    print("Error adding post: $e");
-  } finally {
     setState(() {
-      _isAddingPost = false;
+      _isAddingPost = true;
     });
+
+    try {
+      await _firestore.collection('posts').add({
+        'name': name,
+        'description': description,
+        'photoUrl': photoUrl,
+        'timestamp': FieldValue.serverTimestamp(),
+        'userType': 'student',
+        'likes': 0,
+        'comments': [],
+      });
+      print("Post added successfully!");
+    } catch (e) {
+      print("Error adding post: $e");
+    } finally {
+      setState(() {
+        _isAddingPost = false;
+      });
+    }
   }
-}
 
   Future<void> _addCommentToPost(String postId, String comment) async {
-  try {
-    final timestamp = FieldValue.serverTimestamp();
-    await _firestore
-        .collection('posts')
-        .doc(postId)
-        .collection('comments')
-        .add({
-      'comment': comment,
-      'userName': _username ?? 'Unknown', 
-      'timestamp': timestamp,
-    });
+    try {
+      final timestamp = FieldValue.serverTimestamp();
 
-    print("Comment added successfully!");
-    setState(() {}); // This will ensure the UI updates to reflect the new comment
-  } catch (e) {
-    print("Error adding comment: $e");
-  }
-}
+      await _firestore
+          .collection('posts')
+          .doc(postId)
+          .collection('comments')
+          .add({
+        'comment': comment,
+        'userName': _username ?? 'Unknown', // Use the fetched username
+        'timestamp': timestamp,
+      });
 
-  Future<void> _addLikeToPost(String postId, int currentLikes) async {
-  try {
-    // Increment the like count
-    await _firestore.collection('posts').doc(postId).update({
-      'likes': currentLikes + 1,
-    });
-  } catch (e) {
-    print("Error adding like: $e");
+      print("Comment added successfully!");
+      setState(() {}); // Refresh UI if necessary
+    } catch (e) {
+      print("Error adding comment: $e");
+    }
   }
-}
 
   void _addCommentDialog(String postId) {
     final _commentController = TextEditingController();
@@ -175,157 +163,167 @@ class _FeedPageState extends State<FeedPage> {
         automaticallyImplyLeading: false,
         centerTitle: true,
         actions: [
-            if (_selectedIndex == 0)
-              IconButton(
-                icon: const Icon(Icons.logout, color: Color(0xFF8B0000)),
-                onPressed: () async {
-                  try {
-                    await _auth.signOut(); // Sign out the user
-                    Navigator.pushNamedAndRemoveUntil(
-                        context, '/', (route) => false); // Navigate to login page
-                  } catch (e) {
-                    print("Error during logout: $e");
-                  }
-                },
-              ),
-          ],
+          IconButton(
+            icon: const Icon(Icons.logout, color: Color(0xFF8B0000)),
+            onPressed: () async {
+              try {
+                await FirebaseAuth.instance.signOut();
+                Navigator.pushNamedAndRemoveUntil(
+                    context, '/', (route) => false);
+              } catch (e) {
+                print("Error during logout: $e");
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("Logout failed: $e")),
+                );
+              }
+            },
+          ),
+        ],
       ),
       body: StreamBuilder<List<Post>>(
-  stream: _fetchPosts(), // Make sure this fetches posts correctly
-  builder: (context, snapshot) {
-    if (snapshot.connectionState == ConnectionState.waiting) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (!snapshot.hasData || snapshot.data!.isEmpty) {
-      return const Center(child: Text("No posts available."));
-    }
+        stream: _fetchPosts(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(child: Text("No posts available."));
+          }
 
-    final posts = snapshot.data!;
-    return ListView.builder(
-      itemCount: posts.length,
-      itemBuilder: (context, index) {
-        final post = posts[index];
-        return Card(
-          elevation: 4,
-          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // User info row
-                Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 20,
-                      backgroundColor: Colors.grey[300],
-                      child: const Icon(Icons.person, color: Colors.grey),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      post.name,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      _formatTimestamp(post.timestamp),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(post.description),
-                
-                // Image display logic
-                if (post.photoUrl != null && post.photoUrl!.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8.0),
-                    child: Image.network(
-                      post.photoUrl!,
-                      fit: BoxFit.cover,
-                      height: 200, // Adjust height as needed
-                      width: double.infinity,
-                    ),
-                  ),
-                const SizedBox(height: 16),
-
-                // Like and Comment section
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: () {
-                        // Call the function to add a like
-                        _addLikeToPost(post.id, post.likes);
-                      },
-                      icon: const Icon(Icons.favorite_border),
-                      color: Colors.red,
-                      tooltip: 'Like',
-                    ),
-                    Text(post.likes.toString()), // Display the like count
-                    const SizedBox(width: 16),
-                    IconButton(
-                      onPressed: () => _addCommentDialog(post.id),
-                      icon: const Icon(Icons.comment),
-                      color: Colors.grey,
-                      tooltip: 'Comments',
-                    ),
-                    Text(post.comments.isEmpty ? '0' : post.comments.length.toString()),
-                  ],
-                ),
-                
-                // Display comments if available
-                if (post.comments.isNotEmpty) ...[
-                  ExpansionTile(
-                    title: const Text(
-                      "View Comments",
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                    children: post.comments.map((comment) {
-                      return ListTile(
-                        leading: CircleAvatar(
-                          radius: 20,
-                          backgroundColor: Colors.grey[300],
-                          child: const Icon(Icons.person, color: Colors.grey),
-                        ),
-                        title: Row(
-                          children: [
-                            Text(
-                              comment.userName,
-                              style: const TextStyle(fontWeight: FontWeight.bold),
+          final posts = snapshot.data!;
+          return ListView.builder(
+            itemCount: posts.length,
+            itemBuilder: (context, index) {
+              final post = posts[index];
+              return Card(
+                elevation: 4,
+                margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 20,
+                            backgroundColor: Colors.grey[300],
+                            child: const Icon(Icons.person, color: Colors.grey),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            post.name,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
                             ),
-                            const SizedBox(width: 8),
-                            Text(
-                              _formatTimestamp(comment.timestamp),
-                              style: const TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            post.timestamp != null
+                                ? _formatTimestamp(post.timestamp!)
+                                : '',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
                             ),
-                          ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(post.description),
+                      if (post.photoUrl != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Image.network(post.photoUrl!),
                         ),
-                        subtitle: Text(comment.comment),
-                      );
-                    }).toList(),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          IconButton(
+                            onPressed: () async {
+                              try {
+                                await _firestore
+                                    .collection('posts')
+                                    .doc(post.id)
+                                    .update({
+                                  'likes': post.likes + 1,
+                                });
+                                setState(() {
+                                  post.likes +=
+                                      1; // Update locally for immediate UI response
+                                });
+                              } catch (e) {
+                                print("Error liking the post: $e");
+                              }
+                            },
+                            icon: const Icon(Icons.favorite_border),
+                            color: Colors.red,
+                            tooltip: 'Like',
+                          ),
+                          Text(post.likes.toString()),
+                          const SizedBox(width: 16),
+                          IconButton(
+                            onPressed: () => _addCommentDialog(post.id),
+                            icon: const Icon(Icons.comment),
+                            color: Colors.grey,
+                            tooltip: 'Comments',
+                          ),
+                          Text(post.comments.isEmpty
+                              ? '0'
+                              : post.comments.length.toString()),
+                        ],
+                      ),
+                      if (post.comments.isNotEmpty) ...[
+                        ExpansionTile(
+                          title: const Text(
+                            "View Comments",
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                          children: post.comments.map((comment) {
+                            return ListTile(
+                              leading: CircleAvatar(
+                                radius: 20,
+                                backgroundColor: Colors.grey[300],
+                                child: const Icon(Icons.person,
+                                    color: Colors.grey),
+                              ),
+                              title: Row(
+                                children: [
+                                  Text(
+                                    comment.userName,
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(
+                                      width:
+                                          8), // Add some spacing between username and timestamp
+                                  Text(
+                                    _formatTimestamp(comment.timestamp),
+                                    style: const TextStyle(
+                                        fontSize: 12, color: Colors.grey),
+                                  ),
+                                ],
+                              ),
+                              subtitle: Text(comment.comment),
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    ],
                   ),
-                ],
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  },
-),
-
+                ),
+              );
+            },
+          );
+        },
+      ),
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 80.0),
         child: FloatingActionButton(
           onPressed: () {
             // Navigate to AddPostScreen when the button is clicked
-            Navigator.pushReplacement(
+            Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => AddPostScreen(onPostAdded: _addPost),
@@ -372,7 +370,7 @@ class _FeedPageState extends State<FeedPage> {
 
     if (index == 1) {
       // If "Emergency" is tapped
-      Navigator.pushReplacement(
+      Navigator.push(
         context,
         MaterialPageRoute(
             builder: (context) => const SosPage()), // Navigate to SosPage
