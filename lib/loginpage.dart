@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'studentfeedpage.dart'; // Import the FeedPage for students
-import 'policefeedpage.dart'; // Import the PoliceInterface for police
+import 'studentfeedpage.dart';
+import 'policefeedpage.dart';
 import 'registerpage.dart';
 
 class LoginPage extends StatefulWidget {
@@ -25,16 +25,14 @@ class _LoginPageState extends State<LoginPage> {
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment
-                  .start, // Start alignment to move everything up
+              mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                // Image instead of CircleAvatar for logo
                 Image.asset(
-                  'assets/utmsafelogo.png', // Replace with your image path
-                  width: 200, // Adjust the width of your image
-                  height: 200, // Adjust the height of your image
+                  'assets/utmsafelogo.png',
+                  width: 200,
+                  height: 200,
                 ),
-                const SizedBox(height: 10), // Reduced space below the logo
+                const SizedBox(height: 10),
 
                 const Text(
                   'Welcome',
@@ -44,10 +42,9 @@ class _LoginPageState extends State<LoginPage> {
                     fontFamily: 'Roboto',
                   ),
                 ),
-                const SizedBox(
-                    height: 30), // Reduced space between title and input fields
+                const SizedBox(height: 30),
 
-                // Username text field with reduced size
+                // Username text field
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: TextField(
@@ -68,7 +65,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 16),
 
-                // Password text field with reduced size
+                // Password text field
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: TextField(
@@ -90,7 +87,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 24),
 
-                // Login button with custom style and gradient
+                // Login button
                 ElevatedButton(
                   onPressed: _handleLogin,
                   style: ElevatedButton.styleFrom(
@@ -100,7 +97,7 @@ class _LoginPageState extends State<LoginPage> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(24),
                     ),
-                    elevation: 5, // Add shadow for depth
+                    elevation: 5,
                   ),
                   child: const Text(
                     'Log In',

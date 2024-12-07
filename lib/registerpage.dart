@@ -28,6 +28,7 @@ class _RegisterPageState extends State<RegisterPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // User input field
               _buildTextField('Username', usernameController),
               const SizedBox(height: 16),
               _buildTextField('Email', emailController),
@@ -39,14 +40,13 @@ class _RegisterPageState extends State<RegisterPage> {
               const Text('Select Role:', style: TextStyle(fontSize: 16)),
               const SizedBox(height: 8),
 
-              // Interactive Role Selection without assets
+              // Interactive Role Selection
               _buildRoleCard('UTM Auxiliary Police', 'auxiliary_police'),
               const SizedBox(height: 16),
               _buildRoleCard('UTM Student', 'student'),
-
               const SizedBox(height: 24),
 
-              // Register Button with Gradient Effect
+              // Register Button
               ElevatedButton(
                 onPressed: _registerUser,
                 style: ElevatedButton.styleFrom(
