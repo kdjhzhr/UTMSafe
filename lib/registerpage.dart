@@ -13,7 +13,11 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final TextEditingController codeController =
+      TextEditingController(); // Code controller for auxiliary police
   String? userType;
+  final String auxiliaryPoliceCode =
+      '12345'; // Predefined code for auxiliary police
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +32,6 @@ class _RegisterPageState extends State<RegisterPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // User input field
               _buildTextField('Username', usernameController),
               const SizedBox(height: 16),
               _buildTextField('Email', emailController),
@@ -36,17 +39,17 @@ class _RegisterPageState extends State<RegisterPage> {
               _buildTextField('Password', passwordController,
                   obscureText: true),
               const SizedBox(height: 16),
-
               const Text('Select Role:', style: TextStyle(fontSize: 16)),
               const SizedBox(height: 8),
-
-              // Interactive Role Selection
               _buildRoleCard('UTM Auxiliary Police', 'auxiliary_police'),
               const SizedBox(height: 16),
               _buildRoleCard('UTM Student', 'student'),
               const SizedBox(height: 24),
-
-              // Register Button
+              if (userType == 'auxiliary_police') ...[
+                _buildTextField('Enter Code',
+                    codeController), // Only show if role is auxiliary_police
+                const SizedBox(height: 16),
+              ],
               ElevatedButton(
                 onPressed: _registerUser,
                 style: ElevatedButton.styleFrom(
@@ -123,7 +126,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 value == 'auxiliary_police' ? Icons.security : Icons.school,
                 color: userType == value ? Colors.white : Colors.black,
                 size: 30,
-              ), // Using icons based on role
+              ),
               const SizedBox(width: 16),
               Text(
                 title,
@@ -145,13 +148,22 @@ class _RegisterPageState extends State<RegisterPage> {
     final username = usernameController.text.trim();
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
+    final code = codeController.text.trim();
 
     if (username.isEmpty ||
         email.isEmpty ||
         password.isEmpty ||
-        userType == null) {
+        userType == null ||
+        (userType == 'auxiliary_police' && code.isEmpty)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill all fields')),
+      );
+      return;
+    }
+
+    if (userType == 'auxiliary_police' && code != auxiliaryPoliceCode) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Incorrect code for auxiliary police')),
       );
       return;
     }
