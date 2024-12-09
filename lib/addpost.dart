@@ -7,7 +7,7 @@ import 'dart:io';
 import 'studentfeedpage.dart';
 
 class AddPostScreen extends StatefulWidget {
-  final Function(String, String, String?) onPostAdded;
+  final Function(String username, String description, String? photoUrl, String category) onPostAdded;
 
   const AddPostScreen({Key? key, required this.onPostAdded}) : super(key: key);
 
@@ -20,6 +20,15 @@ class _AddPostScreenState extends State<AddPostScreen> {
   String? _imageUrl;
   String? _username;
   bool _isLoading = false;
+  String? _selectedCategory;
+
+  final List<String> _categories = [
+    'Monkey Attack',
+    'Snake Encounter',
+    'Fire Emergency',
+    'Minor Accident',
+    'Electric Shock'
+  ];
 
   @override
   void initState() {
@@ -69,10 +78,17 @@ class _AddPostScreenState extends State<AddPostScreen> {
     final description = _descriptionController.text.trim();
     final photoUrl = _imageUrl;
 
-    // Check if the description is empty and show an error if true
+    // Check if the description or category is empty and show an error if true
     if (description.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter a description')),
+      );
+      return;
+    }
+
+    if (_selectedCategory == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a category')),
       );
       return;
     }
@@ -88,8 +104,8 @@ class _AddPostScreenState extends State<AddPostScreen> {
       _isLoading = true;
     });
 
-    // Call the provided onPostAdded function with the description (and photoUrl if any)
-    widget.onPostAdded(_username!, description, photoUrl).then((_) {
+    // Call the provided onPostAdded function with the description, category, and photoUrl
+    widget.onPostAdded(_username!, description, photoUrl, _selectedCategory!).then((_) {
       setState(() {
         _isLoading = false;
       });
@@ -106,7 +122,6 @@ class _AddPostScreenState extends State<AddPostScreen> {
       );
     });
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -118,7 +133,7 @@ class _AddPostScreenState extends State<AddPostScreen> {
             onPressed: () {
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => FeedPage()), 
+                MaterialPageRoute(builder: (context) => FeedPage()),
               );
             },
             style: TextButton.styleFrom(
@@ -157,6 +172,22 @@ class _AddPostScreenState extends State<AddPostScreen> {
                   border: InputBorder.none,
                   hintStyle: TextStyle(color: Colors.grey),
                 ),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: _selectedCategory,
+                hint: const Text('Select Category'),
+                items: _categories
+                    .map((category) => DropdownMenuItem<String>(
+                          value: category,
+                          child: Text(category),
+                        ))
+                    .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedCategory = value;
+                  });
+                },
               ),
               const SizedBox(height: 16),
               TextButton.icon(
