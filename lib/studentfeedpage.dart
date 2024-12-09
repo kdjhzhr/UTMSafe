@@ -337,7 +337,7 @@ Future<void> _updatePost(String postId, String description) async {
                 const SizedBox(width: 8),
                 Text(
                   post.name,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 const Spacer(),
                 Text(
@@ -454,7 +454,7 @@ Future<void> _updatePost(String postId, String description) async {
                                     children: [
                                       Text(
                                         userName,
-                                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                                       ),
                                       const SizedBox(width: 8),
                                       Text(
