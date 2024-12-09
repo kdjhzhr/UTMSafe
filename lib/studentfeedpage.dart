@@ -49,11 +49,24 @@ class _FeedPageState extends State<FeedPage> {
       'timestamp': FieldValue.serverTimestamp(),
       'likes': 0,
     });
+
+    // Update the category count in the 'category_counts' collection
+      final categoryRef = _firestore.collection('category_counts').doc(category);
+      await _firestore.runTransaction((transaction) async {
+        final categoryDoc = await transaction.get(categoryRef);
+        if (categoryDoc.exists) {
+          // If the category exists, increment its count
+          final newCount = (categoryDoc['count'] as int) + 1;
+          transaction.update(categoryRef, {'count': newCount});
+        } else {
+          // If the category does not exist, create it with a count of 1
+          transaction.set(categoryRef, {'count': 1});
+        }
+      });
   } catch (e) {
     print("Error adding post: $e");
   }
 }
-
   Stream<List<Post>> _fetchPosts() {
     return _firestore
         .collection('posts')
@@ -190,6 +203,7 @@ Future<void> _updatePost(String postId, String description) async {
       },
     );
   }
+
   void _showEditCommentDialog(String postId, String commentId, String existingComment) {
   final _controller = TextEditingController(text: existingComment);
 
@@ -222,6 +236,8 @@ Future<void> _updatePost(String postId, String description) async {
     },
   );
 }
+
+
   String _formatTimestamp(Timestamp timestamp) {
     final dateTime = timestamp.toDate();
     return DateFormat('dd/MM/yyyy HH:mm').format(dateTime);
@@ -243,6 +259,19 @@ Future<void> _updatePost(String postId, String description) async {
         return '⚠️'; 
     }
   }
+
+  // Function to fetch the most common category
+  Stream<DocumentSnapshot> _fetchMostCommonCategory() {
+  return _firestore
+      .collection('category_counts')
+      .orderBy('count', descending: true)
+      .limit(1)
+      .snapshots()
+      .map((snapshot) {
+        // If documents exist, return the first document
+        return snapshot.docs.first;
+      });
+}
 
   @override
   Widget build(BuildContext context) {
@@ -273,7 +302,7 @@ Future<void> _updatePost(String postId, String description) async {
       ),
       body: Column(
         children: [
-          
+          // Post Stream Builder
           StreamBuilder<List<Post>>(
             stream: _fetchPosts(),
             builder: (context, snapshot) {
