@@ -114,75 +114,149 @@ class _ReportState extends State<Report> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Alert Banner
-            FutureBuilder<Map<String, dynamic>>(
-              future: _fetchMostCommonCategoryWithCount(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const CircularProgressIndicator();
-                }
-                if (snapshot.hasError || !snapshot.hasData) {
-                  return const Text("Error loading data");
-                }
+            
+            // Alert Banner with Category Filter and Counter
+FutureBuilder<Map<String, dynamic>>(
+  future: _fetchMostCommonCategoryWithCount(),
+  builder: (context, snapshot) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return const CircularProgressIndicator();
+    }
+    if (snapshot.hasError || !snapshot.hasData) {
+      return const Text("Error loading data");
+    }
 
-                final mostCommonCategory = snapshot.data!['category'];
-                final count = snapshot.data!['count'];
+    final mostCommonCategory = snapshot.data!['category'];
+    final count = snapshot.data!['count'];
 
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 16.0), child: Container(
-                    width: MediaQuery.of(context).size.width * 0.9, // Centered with some margin
-                    padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-                    decoration: BoxDecoration(
-                      color: Colors.red, // Updated alert banner color
-                      borderRadius: BorderRadius.circular(8.0),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2), // Subtle shadow
-                          blurRadius: 6.0,
-                          offset: const Offset(0, 4),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Alert Banner
+          Expanded(
+            flex: 2,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+              decoration: BoxDecoration(
+                color: Colors.red, // Updated alert banner color
+                borderRadius: BorderRadius.circular(8.0),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2), // Subtle shadow
+                    blurRadius: 6.0,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.warning,
+                        color: Colors.yellow, // Updated icon color
+                        size: 24.0,
+                      ),
+                      const SizedBox(width: 12), // Space between icon and text
+                      Text(
+                        'Most Common Incident:',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black, // Text color
                         ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center, // Center align content
-                      children: [
-                        const Icon(
-                          Icons.warning,
-                          color: Colors.yellow, // Updated icon color
-                          size: 24.0,
-                        ),
-                        const SizedBox(width: 12), // Space between icon and text
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Text(
-                                'Most Common Incident:',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black, // Text color
-                                ),
-                              ),
-                              Text(
-                                '$mostCommonCategory (Count: $count)',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.black, // Text color
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                      ),
+                    ],
+                  ),
+                  Text(
+                    '$mostCommonCategory (Count: $count)',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Colors.black, // Text color
                     ),
                   ),
-                );
-              },
+                ],
+              ),
             ),
+          ),
+          const SizedBox(width: 16), // Space between alert and category filter
+          // Category Filter and Counter
+          Flexible(
+            flex: 1,
+            child: Column(
+              children: [
+                SizedBox(
+                  width: double.infinity, // Make dropdown take full available width
+                  child: DropdownButton<String>(
+                    value: _selectedCategory,
+                    onChanged: (newValue) {
+                      setState(() {
+                        _selectedCategory = newValue!;
+                      });
+                    },
+                    isExpanded: true,
+                    items: <String>[
+                      'Select Category',
+                      'Fire Emergency',
+                      'Snake Encounter',
+                      'Monkey Attack',
+                      'Electric Shock',
+                      'Minor Accident'
+                    ].map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(
+                          value,
+                          style: const TextStyle(fontSize: 12),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                StreamBuilder<int>(
+                  stream: _fetchCategoryCount(_selectedCategory),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const CircularProgressIndicator();
+                    }
+                    if (snapshot.hasError) {
+                      return const Text("Error loading category count");
+                    }
+                    final categoryCount = snapshot.data ?? 0;
+                    return Container(
+                      padding: const EdgeInsets.all(8.0),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Colors.red,
+                          width: 2,
+                        ),
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                      child: Text(
+                        '$categoryCount',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  },
+),
 
-            // Title "Incident Insights"
             const Padding(
   padding: EdgeInsets.only(
     top: 16.0,
@@ -190,7 +264,7 @@ class _ReportState extends State<Report> {
   ),
   child: Center( // Wrap Text in Center widget
     child: Text(
-      'Incident Post and Incident Category Counter',
+      'Incident Post Overview',
       style: TextStyle(
         fontSize: 20,
         fontWeight: FontWeight.bold,
@@ -275,71 +349,6 @@ class _ReportState extends State<Report> {
       ),
     ),
     const SizedBox(width: 8),
-    Flexible(
-  child: SizedBox(
-    width: 120, // Set a fixed width for the dropdown
-    child: DropdownButton<String>(
-      value: _selectedCategory,
-      onChanged: (newValue) {
-        setState(() {
-          _selectedCategory = newValue!;
-        });
-      },
-      isExpanded: true, // Ensure the dropdown expands within the fixed width
-      items: <String>[
-        'Select Category',
-        'Fire Emergency',
-        'Snake Encounter',
-        'Monkey Attack',
-        'Electric Shock',
-        'Minor Accident'
-      ].map<DropdownMenuItem<String>>((String value) {
-        return DropdownMenuItem<String>(
-          value: value,
-          child: Text(
-            value,
-            style: const TextStyle(fontSize: 12),
-            overflow: TextOverflow.ellipsis, // Prevent text overflow
-          ),
-        );
-      }).toList(),
-    ),
-  ),
-),
-
-    const SizedBox(width: 8),
-    Flexible(
-      child: StreamBuilder<int>(
-        stream: _fetchCategoryCount(_selectedCategory),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const CircularProgressIndicator();
-          }
-          if (snapshot.hasError) {
-            return const Text("Error loading category count");
-          }
-          final categoryCount = snapshot.data ?? 0;
-          return Container(
-            padding: const EdgeInsets.all(8.0),
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: Colors.red,
-                width: 2,
-              ),
-              borderRadius: BorderRadius.circular(8.0),
-            ),
-            child: Text(
-              '$categoryCount',
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
-          );
-        },
-      ),
-    ),
   ],
 ),
 
