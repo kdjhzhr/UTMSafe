@@ -184,166 +184,155 @@ class _ReportState extends State<Report> {
 
             // Title "Incident Insights"
             const Padding(
-              padding: EdgeInsets.only(
-                top: 16.0,
-                bottom: 16.0,
-              ),
-              child: Text(
-                'Incident Post and Incident Category Counter',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
+  padding: EdgeInsets.only(
+    top: 16.0,
+    bottom: 16.0,
+  ),
+  child: Center( // Wrap Text in Center widget
+    child: Text(
+      'Incident Post and Incident Category Counter',
+      style: TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+      ),
+    ),
+  ),
+),
 
             // Row to place filters for post count and graph type in a single row
             Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.center, // Center filters
-                  children: [
-                    DropdownButton<String>(
-                      value: _timeFilter,
-                      onChanged: (newValue) {
-                        setState(() {
-                          _timeFilter = newValue!;
-                        });
-                      },
-                      items: <String>['Today', 'This Week']
-                          .map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    DropdownButton<String>(
-                      value: _chartType,
-                      onChanged: (newValue) {
-                        setState(() {
-                          _chartType = newValue!;
-                        });
-                      },
-                      items: <String>['Line Chart', 'Pie Chart']
-                          .map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(width: 16),
-
-                // Place the Post Count and Category filter side by side
-                Row(
-                  children: [
-                    StreamBuilder<int>(
-                      stream: _fetchIncidentPostCount(),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          return const CircularProgressIndicator();
-                        }
-                        if (snapshot.hasError) {
-                          return const Text("Error loading count");
-                        }
-                        final count = snapshot.data ?? 0;
-                        return Container(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 15.0,
-                            horizontal: 30.0,
-                          ),
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: Colors.red,
-                              width: 2,
-                            ), // Red border with 2px width
-                            borderRadius: BorderRadius.circular(8.0), // Rounded corners
-                          ),
-                          child: Text(
-                            '$count', // Display count
-                            style: const TextStyle(
-                              fontSize: 20, // Adjusted font size
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black, // Text color inside the container
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-
-                    const SizedBox(width: 16),
-
-                    // Category Filter Dropdown
-                    DropdownButton<String>(
-                      value: _selectedCategory,
-                      onChanged: (newValue) {
-                        setState(() {
-                          _selectedCategory = newValue!;
-                        });
-                      },
-                      items: <String>[
-                        'Select Category',
-                        'Fire Emergency',
-                        'Snake Encounter',
-                        'Monkey Attack',
-                        'Electric Shock',
-                        'Minor Accident'
-                      ].map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                    ),
-
-                    const SizedBox(width: 16),
-
-                    // Category Count Display
-                    StreamBuilder<int>(
-                      stream: _fetchCategoryCount(_selectedCategory),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          return const CircularProgressIndicator();
-                        }
-                        if (snapshot.hasError) {
-                          return const Text("Error loading category count");
-                        }
-                        final categoryCount = snapshot.data ?? 0;
-                        return Container(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 15.0,
-                            horizontal: 30.0,
-                          ),
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: Colors.red,
-                              width: 2,
-                            ), // Red border with 2px width
-                            borderRadius: BorderRadius.circular(8.0),
-                          ),
-                          child: Text(
-                            '$categoryCount', // Display category count
-                            style: const TextStyle(
-                              fontSize: 20, // Adjusted font size for category count
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ],
+  mainAxisAlignment: MainAxisAlignment.center,
+  children: [
+    Flexible(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center, // Center filters
+        children: [
+          DropdownButton<String>(
+            value: _timeFilter,
+            onChanged: (newValue) {
+              setState(() {
+                _timeFilter = newValue!;
+              });
+            },
+            items: <String>['Today', 'This Week']
+                .map<DropdownMenuItem<String>>((String value) {
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(value, style: const TextStyle(fontSize: 12)),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 8),
+          DropdownButton<String>(
+            value: _chartType,
+            onChanged: (newValue) {
+              setState(() {
+                _chartType = newValue!;
+              });
+            },
+            items: <String>['Line Chart', 'Pie Chart']
+                .map<DropdownMenuItem<String>>((String value) {
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(value, style: const TextStyle(fontSize: 12)),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    ),
+    const SizedBox(width: 8),
+    Flexible(
+      child: StreamBuilder<int>(
+        stream: _fetchIncidentPostCount(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const CircularProgressIndicator();
+          }
+          if (snapshot.hasError) {
+            return const Text("Error loading count");
+          }
+          final count = snapshot.data ?? 0;
+          return Container(
+            padding: const EdgeInsets.all(8.0),
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: Colors.red,
+                width: 2,
+              ),
+              borderRadius: BorderRadius.circular(8.0),
             ),
+            child: Text(
+              '$count',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
+            ),
+          );
+        },
+      ),
+    ),
+    const SizedBox(width: 8),
+    Flexible(
+      child: DropdownButton<String>(
+        value: _selectedCategory,
+        onChanged: (newValue) {
+          setState(() {
+            _selectedCategory = newValue!;
+          });
+        },
+        items: <String>[
+          'Select Category',
+          'Fire Emergency',
+          'Snake Encounter',
+          'Monkey Attack',
+          'Electric Shock',
+          'Minor Accident'
+        ].map<DropdownMenuItem<String>>((String value) {
+          return DropdownMenuItem<String>(
+            value: value,
+            child: Text(value, style: const TextStyle(fontSize: 12)),
+          );
+        }).toList(),
+      ),
+    ),
+    const SizedBox(width: 8),
+    Flexible(
+      child: StreamBuilder<int>(
+        stream: _fetchCategoryCount(_selectedCategory),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const CircularProgressIndicator();
+          }
+          if (snapshot.hasError) {
+            return const Text("Error loading category count");
+          }
+          final categoryCount = snapshot.data ?? 0;
+          return Container(
+            padding: const EdgeInsets.all(8.0),
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: Colors.red,
+                width: 2,
+              ),
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+            child: Text(
+              '$categoryCount',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
+            ),
+          );
+        },
+      ),
+    ),
+  ],
+),
 
             const SizedBox(height: 16),
 
