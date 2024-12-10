@@ -185,72 +185,77 @@ FutureBuilder<Map<String, dynamic>>(
           const SizedBox(width: 16), // Space between alert and category filter
           // Category Filter and Counter
           Flexible(
-            flex: 1,
-            child: Column(
-              children: [
-                SizedBox(
-                  width: double.infinity, // Make dropdown take full available width
-                  child: DropdownButton<String>(
-                    value: _selectedCategory,
-                    onChanged: (newValue) {
-                      setState(() {
-                        _selectedCategory = newValue!;
-                      });
-                    },
-                    isExpanded: true,
-                    items: <String>[
-                      'Select Category',
-                      'Fire Emergency',
-                      'Snake Encounter',
-                      'Monkey Attack',
-                      'Electric Shock',
-                      'Minor Accident'
-                    ].map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(
-                          value,
-                          style: const TextStyle(fontSize: 12),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      );
-                    }).toList(),
-                  ),
+  flex: 1,
+  child: Row( // Change to Row for alignment
+    children: [
+      // Category Filter Dropdown
+      Expanded(
+        flex: 2, // Adjust space taken by dropdown
+        child: SizedBox(
+          width: double.infinity, // Make dropdown take full available width
+          child: DropdownButton<String>(
+            value: _selectedCategory,
+            onChanged: (newValue) {
+              setState(() {
+                _selectedCategory = newValue!;
+              });
+            },
+            isExpanded: true,
+            items: <String>[
+              'Select Category',
+              'Fire Emergency',
+              'Snake Encounter',
+              'Monkey Attack',
+              'Electric Shock',
+              'Minor Accident'
+            ].map<DropdownMenuItem<String>>((String value) {
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(
+                  value,
+                  style: const TextStyle(fontSize: 12),
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 8),
-                StreamBuilder<int>(
-                  stream: _fetchCategoryCount(_selectedCategory),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const CircularProgressIndicator();
-                    }
-                    if (snapshot.hasError) {
-                      return const Text("Error loading category count");
-                    }
-                    final categoryCount = snapshot.data ?? 0;
-                    return Container(
-                      padding: const EdgeInsets.all(8.0),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: Colors.red,
-                          width: 2,
-                        ),
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                      child: Text(
-                        '$categoryCount',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
+              );
+            }).toList(),
           ),
+        ),
+      ),
+      const SizedBox(width: 8), // Space between dropdown and counter
+      // Category Counter
+      StreamBuilder<int>(
+        stream: _fetchCategoryCount(_selectedCategory),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const CircularProgressIndicator();
+          }
+          if (snapshot.hasError) {
+            return const Text("Error loading category count");
+          }
+          final categoryCount = snapshot.data ?? 0;
+          return Container(
+            padding: const EdgeInsets.all(8.0),
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: Colors.red,
+                width: 2,
+              ),
+              borderRadius: BorderRadius.circular(8.0),
+            ),
+            child: Text(
+              '$categoryCount',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
+            ),
+          );
+        },
+      ),
+    ],
+  ),
+),
         ],
       ),
     );
