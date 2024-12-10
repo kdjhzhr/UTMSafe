@@ -13,7 +13,7 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
 
   String _searchQuery = ''; // For filtering tips
 
-  // Example list of safety tips
+  // Example list of safety tips to add dynamically
   final List<Map<String, dynamic>> _safetyTips = [
     {
       'title': 'Check Weather Conditions',
@@ -22,9 +22,6 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
         'Wear suitable clothing based on the weather conditions.',
         'Carry rain gear if rain is expected.',
       ],
-      'feedback': null, // To store thumbs up feedback
-      'comments': [],
-      'thumbsUpCount': 0, // Adding thumbsUpCount
     },
     {
       'title': 'Stay Hydrated',
@@ -33,9 +30,6 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
         'Drink water regularly, especially in hot weather.',
         'Avoid sugary drinks as they can dehydrate you.',
       ],
-      'feedback': null,
-      'comments': [],
-      'thumbsUpCount': 0,
     },
     {
       'title': 'Lost Item',
@@ -45,21 +39,6 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
         'Check with nearby facilities or people who might have found it.',
         'If the item is valuable (e.g., laptop, wallet), file a report.',
       ],
-      'feedback': null,
-      'comments': [],
-      'thumbsUpCount': 0,
-    },
-    {
-      'title': 'Lost Item',
-      'steps': [
-        'Retrace your steps to the last place you saw the item.',
-        'Report the loss to campus security or the lost-and-found department.',
-        'Check with nearby facilities or people who might have found it.',
-        'If the item is valuable (e.g., laptop, wallet), file a report.',
-      ],
-      'feedback': null,
-      'comments': [],
-      'thumbsUpCount': 0,
     },
     {
       'title': 'Monkey Attack',
@@ -69,9 +48,6 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
         'If attacked, back away slowly while avoiding eye contact.',
         'Report to campus security immediately.',
       ],
-      'feedback': null,
-      'comments': [],
-      'thumbsUpCount': 0,
     },
     {
       'title': 'Snake Encounter',
@@ -81,9 +57,6 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
         'Contact campus security for assistance.',
         'Stay alert and avoid walking in tall grass areas.',
       ],
-      'feedback': null,
-      'comments': [],
-      'thumbsUpCount': 0,
     },
     {
       'title': 'Fire Emergency',
@@ -92,6 +65,15 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
         'Evacuate the building immediately via the nearest exit.',
         'Do not use elevators during evacuation.',
         'Call campus security or fire department.',
+      ],
+    },
+    {
+      'title': 'Flooding',
+      'steps': [
+        'Move to higher ground immediately.',
+        'Avoid walking or driving through flooded areas.',
+        'Shut off power if you can do so safely.',
+        'Listen to official warnings and evacuate if necessary.',
       ],
       'feedback': null,
       'comments': [],
@@ -110,36 +92,12 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
       'thumbsUpCount': 0,
     },
     {
-      'title': 'Electric Shock',
-      'steps': [
-        'Immediately remove yourself from the source of the electric shock if safe to do so.',
-        'Call for medical help immediately.',
-        'If the person is unconscious or not breathing, start CPR and continue until help arrives.',
-        'Do not touch the person until the power is turned off.',
-      ],
-      'feedback': null,
-      'comments': [],
-      'thumbsUpCount': 0,
-    },
-    {
       'title': 'Medical Emergency',
       'steps': [
         'Call campus security or an ambulance right away.',
         'Provide the exact location and nature of the emergency.',
         'If the person is conscious, reassure them and keep them calm.',
         'If the person is unconscious, perform necessary first aid until help arrives.',
-      ],
-      'feedback': null,
-      'comments': [],
-      'thumbsUpCount': 0,
-    },
-    {
-      'title': 'Flooding',
-      'steps': [
-        'Move to higher ground immediately.',
-        'Avoid walking or driving through flooded areas.',
-        'Shut off power if you can do so safely.',
-        'Listen to official warnings and evacuate if necessary.',
       ],
       'feedback': null,
       'comments': [],
@@ -158,17 +116,6 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
       'thumbsUpCount': 0,
     },
     {
-      'title': 'Building Collapse',
-      'steps': [
-        'If inside, take cover under sturdy furniture to protect yourself from falling debris.',
-        'Once the shaking stops, carefully check for injuries and evacuate if possible.',
-        'If trapped, remain calm, make noise to alert rescuers, and avoid unnecessary movement.',
-      ],
-      'feedback': null,
-      'comments': [],
-      'thumbsUpCount': 0,
-    },
-    {
       'title': 'Chemical Spill',
       'steps': [
         'Evacuate the area immediately and avoid inhaling fumes.',
@@ -181,30 +128,60 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
       'thumbsUpCount': 0,
     },
     {
-      'title': 'Active Shooter',
+      'title': 'Electric Shock',
       'steps': [
-        'If possible, run to a safe location or lock yourself in a room.',
-        'If running is not an option, hide behind furniture or in closets.',
-        'If you cannot escape or hide, prepare to defend yourself as a last resort.',
-        'Call campus security or emergency services as soon as possible.',
-      ],
-      'feedback': null,
-      'comments': [],
-      'thumbsUpCount': 0,
-    },
-    {
-      'title': 'Heat Stroke/Exhaustion',
-      'steps': [
-        'Move to a cooler place immediately and rest.',
-        'Drink water slowly to rehydrate.',
-        'Loosen tight clothing and apply cool, damp cloths to the skin.',
-        'If symptoms persist, seek medical attention immediately.',
+        'Immediately remove yourself from the source of the electric shock if safe to do so.',
+        'Call for medical help immediately.',
+        'If the person is unconscious or not breathing, start CPR and continue until help arrives.',
+        'Do not touch the person until the power is turned off.',
       ],
       'feedback': null,
       'comments': [],
       'thumbsUpCount': 0,
     },
   ];
+
+  // Function to add a new safety tip dynamically to Firestore
+  Future<void> _addNewTip() async {
+    try {
+      // Get the latest document index in Firestore (for generating tips_0, tips_1, etc.)
+      QuerySnapshot snapshot = await _firestore.collection('safety_tips').get();
+      int newTipIndex = snapshot.docs.length;
+
+      // Loop through the new safety tips list
+      for (int i = 0; i < _safetyTips.length; i++) {
+        final tip = _safetyTips[i];
+
+        // Dynamically create the document name based on the current index (e.g., tip_0, tip_1, etc.)
+        String docName = 'tip_${newTipIndex + i}';
+
+        // Add the new tip to Firestore with only the necessary fields (comments collection and thumbsUpCount)
+        await _firestore.collection('safety_tips').doc(docName).set({
+          'thumbsUpCount': 0, // Initial thumbsUpCount
+        });
+
+        // Add an empty comments subcollection under each tip document
+        await _firestore
+            .collection('safety_tips')
+            .doc(docName)
+            .collection('comments')
+            .get()
+            .then((querySnapshot) {
+          querySnapshot.docs.forEach((doc) {
+            doc.reference.delete();
+          });
+        });
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('New safety tips added successfully!')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to add new tips: $e')),
+      );
+    }
+  }
 
   // Function to update thumbs up feedback in Firestore
   Future<void> _setFeedback(int index, String feedbackType) async {
@@ -233,30 +210,12 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
 
       setState(() {
         // Update local feedback state (for UI changes)
-        _safetyTips[index]['feedback'] = feedbackType;
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to update thumbs up: $e')),
       );
     }
-  }
-
-  // Function to get the thumbs up count from Firestore
-  Future<int> _getThumbsUpCount(int index) async {
-    try {
-      DocumentSnapshot snapshot =
-          await _firestore.collection('safety_tips').doc('tip_$index').get();
-
-      if (snapshot.exists) {
-        return snapshot['thumbsUpCount'] ?? 0;
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to load thumbs up count: $e')),
-      );
-    }
-    return 0;
   }
 
   // Function to filter safety tips based on the search query
@@ -275,17 +234,16 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
     final String commentText = _commentController.text.trim();
     if (commentText.isNotEmpty) {
       try {
-        // Add comment to Firestore
+        // Add comment to Firestore under the 'comments' subcollection
         DocumentReference tipDoc =
             _firestore.collection('safety_tips').doc('tip_$index');
-        await tipDoc.update({
-          'comments': FieldValue.arrayUnion([
-            {'text': commentText}
-          ])
+        await tipDoc.collection('comments').add({
+          'text': commentText,
+          // Remove 'createdAt' field so that no timestamp is automatically added
         });
 
         setState(() {
-          _safetyTips[index]['comments'].add({'text': commentText});
+          // Update local state (for UI changes)
         });
         _commentController.clear();
       } catch (e) {
@@ -302,7 +260,7 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
         .collection('safety_tips')
         .doc('tip_$index')
         .collection('comments')
-        .snapshots();
+        .snapshots(); // Removed ordering by 'createdAt'
   }
 
   @override
@@ -313,6 +271,15 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
       appBar: AppBar(
         title: const Text('Early Measurement Tips'),
         backgroundColor: const Color(0xFFF5E9D4),
+        actions: [
+          // Add the "+" button to the AppBar actions
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: _addNewTip, // Your logic to add a new tip
+            tooltip: 'Add New Tip',
+            color: const Color.fromARGB(255, 245, 225, 190),
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -337,7 +304,6 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
               itemCount: filteredTips.length,
               itemBuilder: (context, index) {
                 final tip = filteredTips[index];
-                final feedback = tip['feedback'];
 
                 return Card(
                   margin: const EdgeInsets.symmetric(
@@ -389,32 +355,32 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
                                 IconButton(
                                   icon: Icon(
                                     Icons.thumb_up,
-                                    color: feedback == 'thumbs_up'
-                                        ? Color(0xFF8B0000)
-                                        : Colors.grey,
+                                    color: Colors.grey,
                                   ),
                                   onPressed: () {
                                     _setFeedback(index, 'thumbs_up');
                                   },
                                 ),
-                                FutureBuilder<int>(
-                                  future: _getThumbsUpCount(index),
+                                StreamBuilder<DocumentSnapshot>(
+                                  stream: _firestore
+                                      .collection('safety_tips')
+                                      .doc('tip_$index')
+                                      .snapshots(),
                                   builder: (context, snapshot) {
                                     if (snapshot.connectionState ==
                                         ConnectionState.waiting) {
                                       return const CircularProgressIndicator();
                                     }
-
                                     if (snapshot.hasData) {
                                       return Text(
-                                        snapshot.data.toString(),
+                                        snapshot.data!['thumbsUpCount']
+                                            .toString(),
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
                                           color: Color(0xFF8B0000),
                                         ),
                                       );
                                     }
-
                                     return const Text('0');
                                   },
                                 ),
@@ -445,23 +411,22 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
                                           content: TextField(
                                             controller: _commentController,
                                             decoration: const InputDecoration(
-                                              hintText:
-                                                  'Type your comment here...',
+                                              hintText: 'Enter your comment...',
                                             ),
                                           ),
-                                          actions: [
+                                          actions: <Widget>[
                                             TextButton(
+                                              child: const Text('Cancel'),
+                                              onPressed: () {
+                                                Navigator.of(context).pop();
+                                              },
+                                            ),
+                                            TextButton(
+                                              child: const Text('Submit'),
                                               onPressed: () {
                                                 _addComment(index);
                                                 Navigator.of(context).pop();
                                               },
-                                              child: const Text('Add Comment'),
-                                            ),
-                                            TextButton(
-                                              onPressed: () {
-                                                Navigator.of(context).pop();
-                                              },
-                                              child: const Text('Cancel'),
                                             ),
                                           ],
                                         );
@@ -469,38 +434,36 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
                                     );
                                   },
                                 ),
-                                const SizedBox(width: 8),
                                 const Text(
-                                  'Comments:',
+                                  'Comment:',
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 16,
                                     color: Color(0xFF8B0000),
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 8),
                             StreamBuilder<QuerySnapshot>(
                               stream: _getComments(index),
                               builder: (context, snapshot) {
-                                if (!snapshot.hasData) {
-                                  return const Center(
-                                      child: CircularProgressIndicator());
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return const CircularProgressIndicator();
                                 }
-
-                                final comments = snapshot.data!.docs;
-                                return ListView.builder(
-                                  shrinkWrap: true,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  itemCount: comments.length,
-                                  itemBuilder: (context, commentIndex) {
-                                    final comment = comments[commentIndex];
-                                    return ListTile(
-                                      title: Text(comment['text']),
-                                    );
-                                  },
-                                );
+                                if (snapshot.hasData) {
+                                  final comments = snapshot.data!.docs;
+                                  return ListView.builder(
+                                    shrinkWrap: true,
+                                    itemCount: comments.length,
+                                    itemBuilder: (context, index) {
+                                      final comment = comments[index];
+                                      return ListTile(
+                                        title: Text(comment['text']),
+                                      );
+                                    },
+                                  );
+                                }
+                                return const Text('No comments yet.');
                               },
                             ),
                           ],
