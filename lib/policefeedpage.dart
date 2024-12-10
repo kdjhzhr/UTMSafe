@@ -24,6 +24,63 @@ class _PoliceInterfaceState extends State<PoliceInterface> {
     _fetchUsername();
   }
 
+  void _showUserDetailsDialog(String username) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Align(
+            alignment: Alignment.center,
+            child: const Text('User Details',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+          content: FutureBuilder<DocumentSnapshot<Object?>?>(
+            future: _firestore
+                .collection('users')
+                .where('username', isEqualTo: username)
+                .limit(1) // Fetch only one document
+                .get()
+                .then((snapshot) => snapshot.docs.isNotEmpty
+                    ? snapshot.docs[0]
+                    : null), // Get the first document if it exists
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const CircularProgressIndicator();
+              }
+              if (!snapshot.hasData) {
+                return const Text('User not found');
+              }
+              final userData = snapshot.data!.data() as Map<String, dynamic>;
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Username: $username',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blueAccent,
+                    ),
+                  ),
+                  Text('Full Name: ${userData['full_name'] ?? 'N/A'}'),
+                  Text('Phone: ${userData['phone'] ?? 'N/A'}'),
+                  Text('Email: ${userData['email'] ?? 'N/A'}'),
+                ],
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _fetchUsername() async {
     try {
       final uid = _auth.currentUser?.uid;
@@ -39,15 +96,16 @@ class _PoliceInterfaceState extends State<PoliceInterface> {
   }
 
   // Function to fetch posts
-Stream<List<Post>> _fetchPosts() {
-  return _firestore
-      .collection('posts')
-      .orderBy('timestamp', descending: true)  // Order by timestamp in descending order
-      .snapshots()
-      .map((snapshot) {
-    return snapshot.docs.map((doc) => Post.fromFirestore(doc)).toList();
-  });
-}
+  Stream<List<Post>> _fetchPosts() {
+    return _firestore
+        .collection('posts')
+        .orderBy('timestamp',
+            descending: true) // Order by timestamp in descending order
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) => Post.fromFirestore(doc)).toList();
+    });
+  }
 
   Future<void> _likePost(String postId, int currentLikes) async {
     try {
@@ -183,7 +241,8 @@ Stream<List<Post>> _fetchPosts() {
                 itemBuilder: (context, index) {
                   final post = posts[index];
                   return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                    margin:
+                        const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                     child: Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Column(
@@ -194,17 +253,24 @@ Stream<List<Post>> _fetchPosts() {
                               CircleAvatar(
                                 radius: 20,
                                 backgroundColor: Colors.grey[300],
-                                child: const Icon(Icons.person, color: Colors.grey),
+                                child: const Icon(Icons.person,
+                                    color: Colors.grey),
                               ),
                               const SizedBox(width: 8),
-                              Text(
-                                post.name,
-                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              GestureDetector(
+                                onTap: () => _showUserDetailsDialog(post.name),
+                                child: Text(
+                                  post.name,
+                                  style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold),
+                                ),
                               ),
                               const Spacer(),
                               Text(
                                 _formatTimestamp(post.timestamp),
-                                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                style: const TextStyle(
+                                    fontSize: 12, color: Colors.grey),
                               ),
                             ],
                           ),
@@ -221,7 +287,8 @@ Stream<List<Post>> _fetchPosts() {
                                   Text(
                                     '${post.category}',
                                     style: const TextStyle(
-                                        fontWeight: FontWeight.bold, color: Color(0xFF8B0000)),
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF8B0000)),
                                   ),
                                 ],
                               ),
@@ -235,7 +302,8 @@ Stream<List<Post>> _fetchPosts() {
                           Row(
                             children: [
                               IconButton(
-                                icon: const Icon(Icons.favorite_border, color: Colors.red),
+                                icon: const Icon(Icons.favorite_border,
+                                    color: Colors.red),
                                 onPressed: () => _likePost(post.id, post.likes),
                               ),
                               Text(post.likes.toString()),
@@ -243,8 +311,10 @@ Stream<List<Post>> _fetchPosts() {
                               Row(
                                 children: [
                                   IconButton(
-                                    icon: const Icon(Icons.comment, color: Colors.grey),
-                                    onPressed: () => _showAddCommentDialog(post.id),
+                                    icon: const Icon(Icons.comment,
+                                        color: Colors.grey),
+                                    onPressed: () =>
+                                        _showAddCommentDialog(post.id),
                                   ),
                                   StreamBuilder<QuerySnapshot>(
                                     stream: _firestore
@@ -253,10 +323,12 @@ Stream<List<Post>> _fetchPosts() {
                                         .collection('comments')
                                         .snapshots(),
                                     builder: (context, snapshot) {
-                                      if (snapshot.connectionState == ConnectionState.waiting) {
+                                      if (snapshot.connectionState ==
+                                          ConnectionState.waiting) {
                                         return const CircularProgressIndicator();
                                       }
-                                      final commentsCount = snapshot.data?.docs.length ?? 0;
+                                      final commentsCount =
+                                          snapshot.data?.docs.length ?? 0;
                                       return Text('$commentsCount');
                                     },
                                   ),
@@ -265,63 +337,86 @@ Stream<List<Post>> _fetchPosts() {
                             ],
                           ),
                           // View comments dropdown
-            StreamBuilder<QuerySnapshot>(
-                stream: _firestore
-                    .collection('posts')
-                    .doc(post.id)
-                    .collection('comments')
-                    .snapshots(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const CircularProgressIndicator();
-                  }
+                          StreamBuilder<QuerySnapshot>(
+                            stream: _firestore
+                                .collection('posts')
+                                .doc(post.id)
+                                .collection('comments')
+                                .snapshots(),
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return const CircularProgressIndicator();
+                              }
 
-                  final commentsCount = snapshot.data?.docs.length ?? 0;
+                              final commentsCount =
+                                  snapshot.data?.docs.length ?? 0;
 
-                  return commentsCount > 0
-                      ? ExpansionTile(
-                          title: const Text('View Comments'),
-                          children: [
-                            ListView.builder(
-                              shrinkWrap: true,
-                              itemCount: commentsCount,
-                              itemBuilder: (context, index) {
-                                final commentData = snapshot.data!.docs[index].data() as Map<String, dynamic>;
-                                final commentId = snapshot.data!.docs[index].id;
-                                final commentText = commentData['comment'] ?? '';
-                                final userName = commentData['userName'] ?? 'Unknown';
-                                final timestamp = commentData['timestamp'] as Timestamp?;
-                                final formattedTime = timestamp != null ? _formatTimestamp(timestamp) : 'Unknown time';
+                              return commentsCount > 0
+                                  ? ExpansionTile(
+                                      title: const Text('View Comments'),
+                                      children: [
+                                        ListView.builder(
+                                          shrinkWrap: true,
+                                          itemCount: commentsCount,
+                                          itemBuilder: (context, index) {
+                                            final commentData = snapshot
+                                                .data!.docs[index]
+                                                .data() as Map<String, dynamic>;
+                                            final commentId =
+                                                snapshot.data!.docs[index].id;
+                                            final commentText =
+                                                commentData['comment'] ?? '';
+                                            final userName =
+                                                commentData['userName'] ??
+                                                    'Unknown';
+                                            final timestamp =
+                                                commentData['timestamp']
+                                                    as Timestamp?;
+                                            final formattedTime = timestamp !=
+                                                    null
+                                                ? _formatTimestamp(timestamp)
+                                                : 'Unknown time';
 
-                                return ListTile(
-                                  contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                                  leading: CircleAvatar(
-                                    radius: 20,
-                                    backgroundColor: Colors.grey[300],
-                                    child: const Icon(Icons.person, color: Colors.grey),
-                                  ),
-                                  title: Row(
-                                    children: [
-                                      Text(
-                                        userName,
-                                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        formattedTime,
-                                        style: const TextStyle(fontSize: 12, color: Colors.grey),
-                                      ),
-                                    ],
-                                  ),
-                                  subtitle: Text(commentText),
-                                );
-                              },
-                            ),
-                          ],
-                        )
-                      : const SizedBox.shrink();
-                },
-              ),
+                                            return ListTile(
+                                              contentPadding:
+                                                  const EdgeInsets.symmetric(
+                                                      vertical: 8,
+                                                      horizontal: 16),
+                                              leading: CircleAvatar(
+                                                radius: 20,
+                                                backgroundColor:
+                                                    Colors.grey[300],
+                                                child: const Icon(Icons.person,
+                                                    color: Colors.grey),
+                                              ),
+                                              title: Row(
+                                                children: [
+                                                  Text(
+                                                    userName,
+                                                    style: const TextStyle(
+                                                        fontSize: 16,
+                                                        fontWeight:
+                                                            FontWeight.bold),
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  Text(
+                                                    formattedTime,
+                                                    style: const TextStyle(
+                                                        fontSize: 12,
+                                                        color: Colors.grey),
+                                                  ),
+                                                ],
+                                              ),
+                                              subtitle: Text(commentText),
+                                            );
+                                          },
+                                        ),
+                                      ],
+                                    )
+                                  : const SizedBox.shrink();
+                            },
+                          ),
                         ],
                       ),
                     ),
@@ -360,7 +455,7 @@ class Post {
   final String? photoUrl;
   final Timestamp timestamp;
   final int likes;
-  final String? category;  // Added category field
+  final String? category; // Added category field
 
   Post({
     required this.id,
@@ -369,7 +464,7 @@ class Post {
     this.photoUrl,
     required this.timestamp,
     required this.likes,
-    this.category,  // Added category field
+    this.category, // Added category field
   });
 
   factory Post.fromFirestore(DocumentSnapshot doc) {
@@ -381,7 +476,7 @@ class Post {
       photoUrl: data['photoUrl'],
       timestamp: data['timestamp'] ?? Timestamp.now(),
       likes: data['likes'] ?? 0,
-      category: data['category'],  // Extract category
+      category: data['category'], // Extract category
     );
   }
 }
