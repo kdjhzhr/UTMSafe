@@ -24,6 +24,63 @@ class _FeedPageState extends State<FeedPage> {
     _fetchUsername();
   }
 
+  void _showUserDetailsDialog(String username) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Align(
+            alignment: Alignment.center,
+            child: const Text('User Details',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+          content: FutureBuilder<DocumentSnapshot<Object?>?>(
+            future: _firestore
+                .collection('users')
+                .where('username', isEqualTo: username)
+                .limit(1) // Fetch only one document
+                .get()
+                .then((snapshot) => snapshot.docs.isNotEmpty
+                    ? snapshot.docs[0]
+                    : null), // Get the first document if it exists
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const CircularProgressIndicator();
+              }
+              if (!snapshot.hasData) {
+                return const Text('User not found');
+              }
+              final userData = snapshot.data!.data() as Map<String, dynamic>;
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Username: $username',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blueAccent,
+                    ),
+                  ),
+                  Text('Full Name: ${userData['full_name'] ?? 'N/A'}'),
+                  Text('Phone: ${userData['phone'] ?? 'N/A'}'),
+                  Text('Email: ${userData['email'] ?? 'N/A'}'),
+                ],
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _fetchUsername() async {
     try {
       final uid = _auth.currentUser?.uid;
@@ -38,20 +95,22 @@ class _FeedPageState extends State<FeedPage> {
     }
   }
 
-  Future<void> _addPost(String username, String description, String? photoUrl, String category) async {
-  try {
-    final postRef = _firestore.collection('posts').doc();
-    await postRef.set({
-      'name': username,
-      'description': description,
-      'photoUrl': photoUrl,
-      'category': category,
-      'timestamp': FieldValue.serverTimestamp(),
-      'likes': 0,
-    });
+  Future<void> _addPost(String username, String description, String? photoUrl,
+      String category) async {
+    try {
+      final postRef = _firestore.collection('posts').doc();
+      await postRef.set({
+        'name': username,
+        'description': description,
+        'photoUrl': photoUrl,
+        'category': category,
+        'timestamp': FieldValue.serverTimestamp(),
+        'likes': 0,
+      });
 
-    // Update the category count in the 'category_counts' collection
-      final categoryRef = _firestore.collection('category_counts').doc(category);
+      // Update the category count in the 'category_counts' collection
+      final categoryRef =
+          _firestore.collection('category_counts').doc(category);
       await _firestore.runTransaction((transaction) async {
         final categoryDoc = await transaction.get(categoryRef);
         if (categoryDoc.exists) {
@@ -63,10 +122,11 @@ class _FeedPageState extends State<FeedPage> {
           transaction.set(categoryRef, {'count': 1});
         }
       });
-  } catch (e) {
-    print("Error adding post: $e");
+    } catch (e) {
+      print("Error adding post: $e");
+    }
   }
-}
+
   Stream<List<Post>> _fetchPosts() {
     return _firestore
         .collection('posts')
@@ -77,56 +137,57 @@ class _FeedPageState extends State<FeedPage> {
   }
 
   Future<void> _showEditPostDialog(Post post) async {
-  final descriptionController = TextEditingController(text: post.description);
+    final descriptionController = TextEditingController(text: post.description);
 
-  showDialog(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: const Text("Edit Post"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: descriptionController,
-              decoration: const InputDecoration(hintText: "Edit description"),
-              maxLines: 3,
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Edit Post"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: descriptionController,
+                decoration: const InputDecoration(hintText: "Edit description"),
+                maxLines: 3,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () {
+                final newDescription = descriptionController.text.trim();
+
+                if (newDescription.isNotEmpty) {
+                  _updatePost(post.id, newDescription);
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text("Save"),
             ),
           ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            child: const Text("Cancel"),
-          ),
-          TextButton(
-            onPressed: () {
-              final newDescription = descriptionController.text.trim();
-
-              if (newDescription.isNotEmpty) {
-                _updatePost(post.id, newDescription);
-                Navigator.pop(context);
-              }
-            },
-            child: const Text("Save"),
-          ),
-        ],
-      );
-    },
-  );
-}
-
-Future<void> _updatePost(String postId, String description) async {
-  try {
-    await _firestore.collection('posts').doc(postId).update({
-      'description': description,
-    });
-  } catch (e) {
-    print("Error updating post: $e");
+        );
+      },
+    );
   }
-}
+
+  Future<void> _updatePost(String postId, String description) async {
+    try {
+      await _firestore.collection('posts').doc(postId).update({
+        'description': description,
+      });
+    } catch (e) {
+      print("Error updating post: $e");
+    }
+  }
+
   Future<void> _likePost(String postId, int currentLikes) async {
     try {
       await _firestore.collection('posts').doc(postId).update({
@@ -153,21 +214,22 @@ Future<void> _updatePost(String postId, String description) async {
     }
   }
 
-  Future<void> _updateComment(String postId, String commentId, String newComment) async {
-  try {
-    await _firestore
-        .collection('posts')
-        .doc(postId)
-        .collection('comments')
-        .doc(commentId)
-        .update({
-      'comment': newComment,
-      'timestamp': Timestamp.now(), // Optionally update the timestamp
-    });
-  } catch (e) {
-    print("Error updating comment: $e");
+  Future<void> _updateComment(
+      String postId, String commentId, String newComment) async {
+    try {
+      await _firestore
+          .collection('posts')
+          .doc(postId)
+          .collection('comments')
+          .doc(commentId)
+          .update({
+        'comment': newComment,
+        'timestamp': Timestamp.now(), // Optionally update the timestamp
+      });
+    } catch (e) {
+      print("Error updating comment: $e");
+    }
   }
-}
 
   void _showAddCommentDialog(String postId) {
     final commentController = TextEditingController();
@@ -204,39 +266,39 @@ Future<void> _updatePost(String postId, String description) async {
     );
   }
 
-  void _showEditCommentDialog(String postId, String commentId, String existingComment) {
-  final _controller = TextEditingController(text: existingComment);
+  void _showEditCommentDialog(
+      String postId, String commentId, String existingComment) {
+    final _controller = TextEditingController(text: existingComment);
 
-  showDialog(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: const Text('Edit Comment'),
-        content: TextField(
-          controller: _controller,
-          decoration: const InputDecoration(hintText: 'Edit your comment'),
-          maxLines: 3,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: const Text('Cancel'),
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Edit Comment'),
+          content: TextField(
+            controller: _controller,
+            decoration: const InputDecoration(hintText: 'Edit your comment'),
+            maxLines: 3,
           ),
-          TextButton(
-            onPressed: () {
-              _updateComment(postId, commentId, _controller.text);
-              Navigator.of(context).pop();
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      );
-    },
-  );
-}
-
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                _updateComment(postId, commentId, _controller.text);
+                Navigator.of(context).pop();
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   String _formatTimestamp(Timestamp timestamp) {
     final dateTime = timestamp.toDate();
@@ -256,22 +318,22 @@ Future<void> _updatePost(String postId, String description) async {
       case 'minor accident':
         return '🚗';
       default:
-        return '⚠️'; 
+        return '⚠️';
     }
   }
 
   // Function to fetch the most common category
   Stream<DocumentSnapshot> _fetchMostCommonCategory() {
-  return _firestore
-      .collection('category_counts')
-      .orderBy('count', descending: true)
-      .limit(1)
-      .snapshots()
-      .map((snapshot) {
-        // If documents exist, return the first document
-        return snapshot.docs.first;
-      });
-}
+    return _firestore
+        .collection('category_counts')
+        .orderBy('count', descending: true)
+        .limit(1)
+        .snapshots()
+        .map((snapshot) {
+      // If documents exist, return the first document
+      return snapshot.docs.first;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -292,7 +354,8 @@ Future<void> _updatePost(String postId, String description) async {
             onPressed: () async {
               try {
                 await _auth.signOut();
-                Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+                Navigator.pushNamedAndRemoveUntil(
+                    context, '/', (route) => false);
               } catch (e) {
                 print("Error during logout: $e");
               }
@@ -316,173 +379,220 @@ Future<void> _updatePost(String postId, String description) async {
               final posts = snapshot.data!;
               return Expanded(
                 child: ListView.builder(
-  itemCount: posts.length,
-  itemBuilder: (context, index) {
-    final post = posts[index];
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // User details row (username and timestamp)
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: Colors.grey[300],
-                  child: const Icon(Icons.person, color: Colors.grey),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  post.name,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                const Spacer(),
-                Text(
-                  _formatTimestamp(post.timestamp),
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            if (post.category != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8.0),
-                child: Row(
-                  children: [
-                    Text(
-                      _getCategoryEmoji(post.category!) + ' ',
-                      style: const TextStyle(fontSize: 18),
-                    ),
-                    Text(
-                      '${post.category}',
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, color: Color(0xFF8B0000)),
-                    ),
-                  ],
-                ),
-              ),
-            // Post description
-            Text(post.description),
-            // Post image if available
-            if (post.photoUrl != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 8.0),
-                child: Image.network(post.photoUrl!),
-              ),
-            // Like and comment buttons
-            Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.favorite_border, color: Colors.red),
-                  onPressed: () => _likePost(post.id, post.likes),
-                ),
-                Text(post.likes.toString()),
-                const SizedBox(width: 16),
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.comment, color: Colors.grey),
-                      onPressed: () => _showAddCommentDialog(post.id),
-                    ),
-                    StreamBuilder<QuerySnapshot>(
-                      stream: _firestore
-                          .collection('posts')
-                          .doc(post.id)
-                          .collection('comments')
-                          .snapshots(),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          return const CircularProgressIndicator();
-                        }
-                        final commentsCount = snapshot.data?.docs.length ?? 0;
-                        return Text('$commentsCount');
-                      },
-                    ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    const SizedBox(width: 16),
-                    IconButton(
-                      icon: const Icon(Icons.edit, color: Colors.blue),
-                      onPressed: () => _showEditPostDialog(post),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            // View comments dropdown
-            StreamBuilder<QuerySnapshot>(
-                stream: _firestore
-                    .collection('posts')
-                    .doc(post.id)
-                    .collection('comments')
-                    .snapshots(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const CircularProgressIndicator();
-                  }
-
-                  final commentsCount = snapshot.data?.docs.length ?? 0;
-
-                  return commentsCount > 0
-                      ? ExpansionTile(
-                          title: const Text('View Comments'),
+                  itemCount: posts.length,
+                  itemBuilder: (context, index) {
+                    final post = posts[index];
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                          vertical: 8, horizontal: 16),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            ListView.builder(
-                              shrinkWrap: true,
-                              itemCount: commentsCount,
-                              itemBuilder: (context, index) {
-                                final commentData = snapshot.data!.docs[index].data() as Map<String, dynamic>;
-                                final commentId = snapshot.data!.docs[index].id;
-                                final commentText = commentData['comment'] ?? '';
-                                final userName = commentData['userName'] ?? 'Unknown';
-                                final timestamp = commentData['timestamp'] as Timestamp?;
-                                final formattedTime = timestamp != null ? _formatTimestamp(timestamp) : 'Unknown time';
+                            // User details row (username and timestamp)
+                            Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 20,
+                                  backgroundColor: Colors.grey[300],
+                                  child: const Icon(Icons.person,
+                                      color: Colors.grey),
+                                ),
+                                const SizedBox(width: 8),
+                                GestureDetector(
+                                  onTap: () =>
+                                      _showUserDetailsDialog(post.name),
+                                  child: Text(
+                                    post.name,
+                                    style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                                const Spacer(),
+                                Text(
+                                  _formatTimestamp(post.timestamp),
+                                  style: const TextStyle(
+                                      fontSize: 12, color: Colors.grey),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            if (post.category != null)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 8.0),
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      _getCategoryEmoji(post.category!) + ' ',
+                                      style: const TextStyle(fontSize: 18),
+                                    ),
+                                    Text(
+                                      '${post.category}',
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF8B0000)),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            // Post description
+                            Text(post.description),
+                            // Post image if available
+                            if (post.photoUrl != null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
+                                child: Image.network(post.photoUrl!),
+                              ),
+                            // Like and comment buttons
+                            Row(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.favorite_border,
+                                      color: Colors.red),
+                                  onPressed: () =>
+                                      _likePost(post.id, post.likes),
+                                ),
+                                Text(post.likes.toString()),
+                                const SizedBox(width: 16),
+                                Row(
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.comment,
+                                          color: Colors.grey),
+                                      onPressed: () =>
+                                          _showAddCommentDialog(post.id),
+                                    ),
+                                    StreamBuilder<QuerySnapshot>(
+                                      stream: _firestore
+                                          .collection('posts')
+                                          .doc(post.id)
+                                          .collection('comments')
+                                          .snapshots(),
+                                      builder: (context, snapshot) {
+                                        if (snapshot.connectionState ==
+                                            ConnectionState.waiting) {
+                                          return const CircularProgressIndicator();
+                                        }
+                                        final commentsCount =
+                                            snapshot.data?.docs.length ?? 0;
+                                        return Text('$commentsCount');
+                                      },
+                                    ),
+                                  ],
+                                ),
+                                Row(
+                                  children: [
+                                    const SizedBox(width: 16),
+                                    IconButton(
+                                      icon: const Icon(Icons.edit,
+                                          color: Colors.blue),
+                                      onPressed: () =>
+                                          _showEditPostDialog(post),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            // View comments dropdown
+                            StreamBuilder<QuerySnapshot>(
+                              stream: _firestore
+                                  .collection('posts')
+                                  .doc(post.id)
+                                  .collection('comments')
+                                  .snapshots(),
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return const CircularProgressIndicator();
+                                }
 
-                                return ListTile(
-                                  contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                                  leading: CircleAvatar(
-                                    radius: 20,
-                                    backgroundColor: Colors.grey[300],
-                                    child: const Icon(Icons.person, color: Colors.grey),
-                                  ),
-                                  title: Row(
-                                    children: [
-                                      Text(
-                                        userName,
-                                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        formattedTime,
-                                        style: const TextStyle(fontSize: 12, color: Colors.grey),
-                                      ),
-                                    ],
-                                  ),
-                                  subtitle: Text(commentText),
-                                  trailing: IconButton(
-                                    icon: const Icon(Icons.edit, color: Colors.blue),
-                                    onPressed: () => _showEditCommentDialog(post.id, commentId, commentText),
-                                  ),
-                                );
+                                final commentsCount =
+                                    snapshot.data?.docs.length ?? 0;
+
+                                return commentsCount > 0
+                                    ? ExpansionTile(
+                                        title: const Text('View Comments'),
+                                        children: [
+                                          ListView.builder(
+                                            shrinkWrap: true,
+                                            itemCount: commentsCount,
+                                            itemBuilder: (context, index) {
+                                              final commentData = snapshot
+                                                      .data!.docs[index]
+                                                      .data()
+                                                  as Map<String, dynamic>;
+                                              final commentId =
+                                                  snapshot.data!.docs[index].id;
+                                              final commentText =
+                                                  commentData['comment'] ?? '';
+                                              final userName =
+                                                  commentData['userName'] ??
+                                                      'Unknown';
+                                              final timestamp =
+                                                  commentData['timestamp']
+                                                      as Timestamp?;
+                                              final formattedTime = timestamp !=
+                                                      null
+                                                  ? _formatTimestamp(timestamp)
+                                                  : 'Unknown time';
+
+                                              return ListTile(
+                                                contentPadding:
+                                                    const EdgeInsets.symmetric(
+                                                        vertical: 8,
+                                                        horizontal: 16),
+                                                leading: CircleAvatar(
+                                                  radius: 20,
+                                                  backgroundColor:
+                                                      Colors.grey[300],
+                                                  child: const Icon(
+                                                      Icons.person,
+                                                      color: Colors.grey),
+                                                ),
+                                                title: Row(
+                                                  children: [
+                                                    Text(
+                                                      userName,
+                                                      style: const TextStyle(
+                                                          fontSize: 16,
+                                                          fontWeight:
+                                                              FontWeight.bold),
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    Text(
+                                                      formattedTime,
+                                                      style: const TextStyle(
+                                                          fontSize: 12,
+                                                          color: Colors.grey),
+                                                    ),
+                                                  ],
+                                                ),
+                                                subtitle: Text(commentText),
+                                                trailing: IconButton(
+                                                  icon: const Icon(Icons.edit,
+                                                      color: Colors.blue),
+                                                  onPressed: () =>
+                                                      _showEditCommentDialog(
+                                                          post.id,
+                                                          commentId,
+                                                          commentText),
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        ],
+                                      )
+                                    : const SizedBox.shrink();
                               },
                             ),
                           ],
-                        )
-                      : const SizedBox.shrink();
-                },
-              ),
-          ],
-        ),
-      ),
-    );
-  },
-),
-
+                        ),
+                      ),
+                    );
+                  },
+                ),
               );
             },
           ),
@@ -511,12 +621,13 @@ Future<void> _updatePost(String postId, String description) async {
         unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Feed'),
-          BottomNavigationBarItem(icon: Icon(Icons.warning), label: 'Emergency'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.warning), label: 'Emergency'),
         ],
         onTap: (index) {
           if (index == 1) {
-            Navigator.push(
-                context, MaterialPageRoute(builder: (context) => const SosPage()));
+            Navigator.push(context,
+                MaterialPageRoute(builder: (context) => const SosPage()));
           } else {
             setState(() {
               _selectedIndex = index;
@@ -535,7 +646,7 @@ class Post {
   final String? photoUrl;
   final Timestamp timestamp;
   final int likes;
-  final String? category;  // Added category field
+  final String? category; // Added category field
 
   Post({
     required this.id,
@@ -544,7 +655,7 @@ class Post {
     this.photoUrl,
     required this.timestamp,
     required this.likes,
-    this.category,  // Added category field
+    this.category, // Added category field
   });
 
   factory Post.fromFirestore(DocumentSnapshot doc) {
@@ -556,7 +667,7 @@ class Post {
       photoUrl: data['photoUrl'],
       timestamp: data['timestamp'] ?? Timestamp.now(),
       likes: data['likes'] ?? 0,
-      category: data['category'],  // Extract category
+      category: data['category'], // Extract category
     );
   }
 }
