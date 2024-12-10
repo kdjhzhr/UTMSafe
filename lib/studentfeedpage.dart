@@ -136,47 +136,52 @@ class _FeedPageState extends State<FeedPage> {
             snapshot.docs.map((doc) => Post.fromFirestore(doc)).toList());
   }
 
-  Future<void> _showEditPostDialog(Post post) async {
-    final descriptionController = TextEditingController(text: post.description);
+Future<void> _showEditPostDialog(Post post) async {
+  if (post.name != _username) {
+    // If the logged-in user is not the post owner, don't show the edit dialog
+    return;
+  }
 
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("Edit Post"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: descriptionController,
-                decoration: const InputDecoration(hintText: "Edit description"),
-                maxLines: 3,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text("Cancel"),
-            ),
-            TextButton(
-              onPressed: () {
-                final newDescription = descriptionController.text.trim();
+  final descriptionController = TextEditingController(text: post.description);
 
-                if (newDescription.isNotEmpty) {
-                  _updatePost(post.id, newDescription);
-                  Navigator.pop(context);
-                }
-              },
-              child: const Text("Save"),
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text("Edit Post"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: descriptionController,
+              decoration: const InputDecoration(hintText: "Edit description"),
+              maxLines: 3,
             ),
           ],
-        );
-      },
-    );
-  }
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () {
+              final newDescription = descriptionController.text.trim();
+
+              if (newDescription.isNotEmpty) {
+                _updatePost(post.id, newDescription);
+                Navigator.pop(context);
+              }
+            },
+            child: const Text("Save"),
+          ),
+        ],
+      );
+    },
+  );
+}
 
   Future<void> _updatePost(String postId, String description) async {
     try {
@@ -266,39 +271,53 @@ class _FeedPageState extends State<FeedPage> {
     );
   }
 
-  void _showEditCommentDialog(
-      String postId, String commentId, String existingComment) {
-    final _controller = TextEditingController(text: existingComment);
+void _showEditCommentDialog(String postId, String commentId, String existingComment) {
+  final _controller = TextEditingController(text: existingComment);
 
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Edit Comment'),
-          content: TextField(
-            controller: _controller,
-            decoration: const InputDecoration(hintText: 'Edit your comment'),
-            maxLines: 3,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Cancel'),
+  // Assuming comments have a 'userName' field to identify the owner
+  final commentRef = _firestore.collection('posts').doc(postId).collection('comments').doc(commentId);
+
+  commentRef.get().then((commentSnapshot) {
+    if (commentSnapshot.exists) {
+      final commentData = commentSnapshot.data() as Map<String, dynamic>;
+      final commentOwner = commentData['userName'];
+
+      if (commentOwner != _username) {
+        // If the logged-in user is not the comment owner, don't show the edit dialog
+        return;
+      }
+
+      showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Edit Comment'),
+            content: TextField(
+              controller: _controller,
+              decoration: const InputDecoration(hintText: 'Edit your comment'),
+              maxLines: 3,
             ),
-            TextButton(
-              onPressed: () {
-                _updateComment(postId, commentId, _controller.text);
-                Navigator.of(context).pop();
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        );
-      },
-    );
-  }
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  _updateComment(postId, commentId, _controller.text);
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Save'),
+              ),
+            ],
+          );
+        },
+      );
+    }
+  });
+}
 
   String _formatTimestamp(Timestamp timestamp) {
     final dateTime = timestamp.toDate();
@@ -485,11 +504,10 @@ class _FeedPageState extends State<FeedPage> {
                                 Row(
                                   children: [
                                     const SizedBox(width: 16),
+                                    if (post.name == _username)
                                     IconButton(
-                                      icon: const Icon(Icons.edit,
-                                          color: Colors.blue),
-                                      onPressed: () =>
-                                          _showEditPostDialog(post),
+                                      icon: const Icon(Icons.edit, color: Colors.blue), 
+                                      onPressed: () =>  _showEditPostDialog(post), 
                                     ),
                                   ],
                                 ),
@@ -539,47 +557,34 @@ class _FeedPageState extends State<FeedPage> {
                                                   : 'Unknown time';
 
                                               return ListTile(
-                                                contentPadding:
-                                                    const EdgeInsets.symmetric(
-                                                        vertical: 8,
-                                                        horizontal: 16),
-                                                leading: CircleAvatar(
-                                                  radius: 20,
-                                                  backgroundColor:
-                                                      Colors.grey[300],
-                                                  child: const Icon(
-                                                      Icons.person,
-                                                      color: Colors.grey),
-                                                ),
-                                                title: Row(
-                                                  children: [
-                                                    Text(
-                                                      userName,
-                                                      style: const TextStyle(
-                                                          fontSize: 16,
-                                                          fontWeight:
-                                                              FontWeight.bold),
-                                                    ),
-                                                    const SizedBox(width: 8),
-                                                    Text(
-                                                      formattedTime,
-                                                      style: const TextStyle(
-                                                          fontSize: 12,
-                                                          color: Colors.grey),
-                                                    ),
-                                                  ],
-                                                ),
-                                                subtitle: Text(commentText),
-                                                trailing: IconButton(
-                                                  icon: const Icon(Icons.edit,
-                                                      color: Colors.blue),
-                                                  onPressed: () =>
-                                                      _showEditCommentDialog(
-                                                          post.id,
-                                                          commentId,
-                                                          commentText),
-                                                ),
-                                              );
+                                                  contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                                                  leading: CircleAvatar(
+                                                    radius: 20,
+                                                    backgroundColor: Colors.grey[300],
+                                                    child: const Icon(Icons.person, color: Colors.grey),
+                                                  ),
+                                                  title: Row(
+                                                    children: [
+                                                      Text(
+                                                        userName,
+                                                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                                      ),
+                                                      const SizedBox(width: 8),
+                                                      Text(
+                                                        formattedTime,
+                                                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  subtitle: Text(commentText),
+                                                  trailing: _username == userName // Check if logged-in user matches comment owner
+                                                      ? IconButton(
+                                                          icon: const Icon(Icons.edit, color: Colors.blue),
+                                                          onPressed: () => _showEditCommentDialog(post.id, commentId, commentText),
+                                                        )
+                                                      : null, // Do not show the edit button if users don't match
+                                                );
+
                                             },
                                           ),
                                         ],
