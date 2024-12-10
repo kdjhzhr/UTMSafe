@@ -276,28 +276,37 @@ class _ReportState extends State<Report> {
     ),
     const SizedBox(width: 8),
     Flexible(
-      child: DropdownButton<String>(
-        value: _selectedCategory,
-        onChanged: (newValue) {
-          setState(() {
-            _selectedCategory = newValue!;
-          });
-        },
-        items: <String>[
-          'Select Category',
-          'Fire Emergency',
-          'Snake Encounter',
-          'Monkey Attack',
-          'Electric Shock',
-          'Minor Accident'
-        ].map<DropdownMenuItem<String>>((String value) {
-          return DropdownMenuItem<String>(
-            value: value,
-            child: Text(value, style: const TextStyle(fontSize: 12)),
-          );
-        }).toList(),
-      ),
+  child: SizedBox(
+    width: 120, // Set a fixed width for the dropdown
+    child: DropdownButton<String>(
+      value: _selectedCategory,
+      onChanged: (newValue) {
+        setState(() {
+          _selectedCategory = newValue!;
+        });
+      },
+      isExpanded: true, // Ensure the dropdown expands within the fixed width
+      items: <String>[
+        'Select Category',
+        'Fire Emergency',
+        'Snake Encounter',
+        'Monkey Attack',
+        'Electric Shock',
+        'Minor Accident'
+      ].map<DropdownMenuItem<String>>((String value) {
+        return DropdownMenuItem<String>(
+          value: value,
+          child: Text(
+            value,
+            style: const TextStyle(fontSize: 12),
+            overflow: TextOverflow.ellipsis, // Prevent text overflow
+          ),
+        );
+      }).toList(),
     ),
+  ),
+),
+
     const SizedBox(width: 8),
     Flexible(
       child: StreamBuilder<int>(
