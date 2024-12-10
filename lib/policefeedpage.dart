@@ -363,8 +363,6 @@ class _PoliceInterfaceState extends State<PoliceInterface> {
                                             final commentData = snapshot
                                                 .data!.docs[index]
                                                 .data() as Map<String, dynamic>;
-                                            final commentId =
-                                                snapshot.data!.docs[index].id;
                                             final commentText =
                                                 commentData['comment'] ?? '';
                                             final userName =
