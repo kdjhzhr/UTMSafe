@@ -12,6 +12,7 @@ class Report extends StatefulWidget {
 class _ReportState extends State<Report> {
   String _timeFilter = 'This Week';
   String _chartType = 'Line Chart';
+  String _selectedCategory = 'Select Category';
 
   // Fetches incident post counts for graph data.
   Stream<List<int>> _fetchIncidentPostData() async* {
@@ -69,6 +70,37 @@ class _ReportState extends State<Report> {
         .map((snapshot) => snapshot.size);
   }
 
+  Stream<int> _fetchCategoryCount(String category) {
+    return FirebaseFirestore.instance
+        .collection('posts')
+        .where('category', isEqualTo: category)
+        .snapshots()
+        .map((snapshot) => snapshot.size);
+  }
+
+  Future<Map<String, dynamic>> _fetchMostCommonCategoryWithCount() async {
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('category_counts')
+          .orderBy('count', descending: true)
+          .limit(1)
+          .get();
+
+      if (snapshot.docs.isNotEmpty) {
+        var categoryDoc = snapshot.docs.first;
+        return {
+          'category': categoryDoc.id,  // Document ID as category name
+          'count': categoryDoc['count'], // Category count
+        };
+      } else {
+        return {'category': 'No data available', 'count': 0};
+      }
+    } catch (e) {
+      debugPrint("Error fetching most common category: $e");
+      return {'category': 'Error fetching data', 'count': 0};
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     DateTime now = DateTime.now();
@@ -82,29 +114,96 @@ class _ReportState extends State<Report> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Title for Incident Post Count (Moved higher)
+            // Alert Banner
+            FutureBuilder<Map<String, dynamic>>(
+              future: _fetchMostCommonCategoryWithCount(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const CircularProgressIndicator();
+                }
+                if (snapshot.hasError || !snapshot.hasData) {
+                  return const Text("Error loading data");
+                }
+
+                final mostCommonCategory = snapshot.data!['category'];
+                final count = snapshot.data!['count'];
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 16.0), child: Container(
+                    width: MediaQuery.of(context).size.width * 0.9, // Centered with some margin
+                    padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+                    decoration: BoxDecoration(
+                      color: Colors.red, // Updated alert banner color
+                      borderRadius: BorderRadius.circular(8.0),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2), // Subtle shadow
+                          blurRadius: 6.0,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center, // Center align content
+                      children: [
+                        const Icon(
+                          Icons.warning,
+                          color: Colors.yellow, // Updated icon color
+                          size: 24.0,
+                        ),
+                        const SizedBox(width: 12), // Space between icon and text
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Most Common Incident:',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black, // Text color
+                                ),
+                              ),
+                              Text(
+                                '$mostCommonCategory (Count: $count)',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.black, // Text color
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+
+            // Title "Incident Insights"
             const Padding(
               padding: EdgeInsets.only(
-                  top: 16.0, bottom: 16.0), // Increased top padding
+                top: 16.0,
+                bottom: 16.0,
+              ),
               child: Text(
-                'Incident Posts Overview',
+                'Incident Post and Incident Category Counter',
                 style: TextStyle(
-                  fontSize: 24,
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
 
-            // Display filters and incident post count (Centered)
+            // Row to place filters for post count and graph type in a single row
             Row(
-              mainAxisAlignment: MainAxisAlignment.center, // Center the content
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Filters and count value centered
                 Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.center, // Center filters
+                  crossAxisAlignment: CrossAxisAlignment.center, // Center filters
                   children: [
-                    // Time Filter Dropdown (Today or This Week)
                     DropdownButton<String>(
                       value: _timeFilter,
                       onChanged: (newValue) {
@@ -123,7 +222,6 @@ class _ReportState extends State<Report> {
 
                     const SizedBox(height: 16),
 
-                    // Chart Type Dropdown (Line Chart or Pie Chart)
                     DropdownButton<String>(
                       value: _chartType,
                       onChanged: (newValue) {
@@ -144,45 +242,111 @@ class _ReportState extends State<Report> {
 
                 const SizedBox(width: 16),
 
-                // Incident Post Count
-                StreamBuilder<int>(
-                  stream: _fetchIncidentPostCount(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const CircularProgressIndicator();
-                    }
-                    if (snapshot.hasError) {
-                      return const Text("Error loading count");
-                    }
-                    final count = snapshot.data ?? 0;
-                    return Container(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 16.0, horizontal: 32.0),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                            color: Colors.red,
-                            width: 2), // Red border with 2px width
-                        borderRadius:
-                            BorderRadius.circular(8.0), // Rounded corners
-                      ),
-                      child: Text(
-                        '$count', // Display count
-                        style: const TextStyle(
-                          fontSize: 36, // Adjusted font size
-                          fontWeight: FontWeight.bold,
-                          color:
-                              Colors.black, // Text color inside the container
-                        ),
-                      ),
-                    );
-                  },
+                // Place the Post Count and Category filter side by side
+                Row(
+                  children: [
+                    StreamBuilder<int>(
+                      stream: _fetchIncidentPostCount(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const CircularProgressIndicator();
+                        }
+                        if (snapshot.hasError) {
+                          return const Text("Error loading count");
+                        }
+                        final count = snapshot.data ?? 0;
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 15.0,
+                            horizontal: 30.0,
+                          ),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: Colors.red,
+                              width: 2,
+                            ), // Red border with 2px width
+                            borderRadius: BorderRadius.circular(8.0), // Rounded corners
+                          ),
+                          child: Text(
+                            '$count', // Display count
+                            style: const TextStyle(
+                              fontSize: 20, // Adjusted font size
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black, // Text color inside the container
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+
+                    const SizedBox(width: 16),
+
+                    // Category Filter Dropdown
+                    DropdownButton<String>(
+                      value: _selectedCategory,
+                      onChanged: (newValue) {
+                        setState(() {
+                          _selectedCategory = newValue!;
+                        });
+                      },
+                      items: <String>[
+                        'Select Category',
+                        'Fire Emergency',
+                        'Snake Encounter',
+                        'Monkey Attack',
+                        'Electric Shock',
+                        'Minor Accident'
+                      ].map<DropdownMenuItem<String>>((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Text(value),
+                        );
+                      }).toList(),
+                    ),
+
+                    const SizedBox(width: 16),
+
+                    // Category Count Display
+                    StreamBuilder<int>(
+                      stream: _fetchCategoryCount(_selectedCategory),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const CircularProgressIndicator();
+                        }
+                        if (snapshot.hasError) {
+                          return const Text("Error loading category count");
+                        }
+                        final categoryCount = snapshot.data ?? 0;
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 15.0,
+                            horizontal: 30.0,
+                          ),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: Colors.red,
+                              width: 2,
+                            ), // Red border with 2px width
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          child: Text(
+                            '$categoryCount', // Display category count
+                            style: const TextStyle(
+                              fontSize: 20, // Adjusted font size for category count
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ],
             ),
 
             const SizedBox(height: 16),
 
-            // Graph (Line or Pie) Display
             Expanded(
               child: StreamBuilder<List<int>>(
                 stream: _fetchIncidentPostData(),
