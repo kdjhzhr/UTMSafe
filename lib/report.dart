@@ -12,7 +12,7 @@ class Report extends StatefulWidget {
 class _ReportState extends State<Report> {
   String _timeFilter = 'This Week';
   String _chartType = 'Line Chart';
-  String _selectedCategory = 'Select Category';
+  String _selectedCategory = 'Category';
 
   // Fetches incident post counts for graph data.
   Stream<List<int>> _fetchIncidentPostData() async* {
@@ -132,19 +132,18 @@ FutureBuilder<Map<String, dynamic>>(
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           // Alert Banner
           Expanded(
             flex: 2,
             child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+              padding: const EdgeInsets.all(12.0),
               decoration: BoxDecoration(
-                color: Colors.red, // Updated alert banner color
+                color: Colors.red,
                 borderRadius: BorderRadius.circular(8.0),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.2), // Subtle shadow
+                    color: Colors.black.withOpacity(0.2),
                     blurRadius: 6.0,
                     offset: const Offset(0, 4),
                   ),
@@ -157,105 +156,107 @@ FutureBuilder<Map<String, dynamic>>(
                     children: [
                       const Icon(
                         Icons.warning,
-                        color: Colors.yellow, // Updated icon color
-                        size: 24.0,
+                        color: Colors.yellow,
+                        size: 20.0,
                       ),
-                      const SizedBox(width: 12), // Space between icon and text
-                      Text(
-                        'Most Common Incident:',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black, // Text color
+                      const SizedBox(width: 8), // Adjust spacing
+                      Expanded(
+                        child: Text(
+                          'Most Common Incident:',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
                   ),
+                  const SizedBox(height: 4), // Adjust spacing
                   Text(
                     '$mostCommonCategory (Count: $count)',
                     style: const TextStyle(
-                      fontSize: 16,
-                      color: Colors.black, // Text color
+                      fontSize: 14,
+                      color: Colors.black,
                     ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
             ),
           ),
           const SizedBox(width: 16), // Space between alert and category filter
-          // Category Filter and Counter
+          // Category Filter and Counter in a Row
           Flexible(
-  flex: 1,
-  child: Row( // Change to Row for alignment
-    children: [
-      // Category Filter Dropdown
-      Expanded(
-        flex: 2, // Adjust space taken by dropdown
-        child: SizedBox(
-          width: double.infinity, // Make dropdown take full available width
-          child: DropdownButton<String>(
-            value: _selectedCategory,
-            onChanged: (newValue) {
-              setState(() {
-                _selectedCategory = newValue!;
-              });
-            },
-            isExpanded: true,
-            items: <String>[
-              'Select Category',
-              'Fire Emergency',
-              'Snake Encounter',
-              'Monkey Attack',
-              'Electric Shock',
-              'Minor Accident'
-            ].map<DropdownMenuItem<String>>((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(
-                  value,
-                  style: const TextStyle(fontSize: 12),
-                  overflow: TextOverflow.ellipsis,
+            flex: 1,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Category Filter Dropdown
+                Expanded(
+                  child: DropdownButton<String>(
+                    value: _selectedCategory,
+                    onChanged: (newValue) {
+                      setState(() {
+                        _selectedCategory = newValue!;
+                      });
+                    },
+                    isExpanded: true,
+                    items: <String>[
+                      'Category',
+                      'Fire Emergency',
+                      'Snake Encounter',
+                      'Monkey Attack',
+                      'Electric Shock',
+                      'Minor Accident'
+                    ].map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(
+                          value,
+                          style: const TextStyle(fontSize: 12),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      );
+                    }).toList(),
+                  ),
                 ),
-              );
-            }).toList(),
+                const SizedBox(width: 8), // Adjust spacing between dropdown and counter
+                // Category Counter
+                StreamBuilder<int>(
+                  stream: _fetchCategoryCount(_selectedCategory),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const CircularProgressIndicator();
+                    }
+                    if (snapshot.hasError) {
+                      return const Text("Error");
+                    }
+                    final categoryCount = snapshot.data ?? 0;
+                    return Container(
+                      padding: const EdgeInsets.all(8.0),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Colors.red,
+                          width: 2,
+                        ),
+                        borderRadius: BorderRadius.circular(8.0),
+                      ),
+                      child: Text(
+                        '$categoryCount',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
-        ),
-      ),
-      const SizedBox(width: 8), // Space between dropdown and counter
-      // Category Counter
-      StreamBuilder<int>(
-        stream: _fetchCategoryCount(_selectedCategory),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const CircularProgressIndicator();
-          }
-          if (snapshot.hasError) {
-            return const Text("Error loading category count");
-          }
-          final categoryCount = snapshot.data ?? 0;
-          return Container(
-            padding: const EdgeInsets.all(8.0),
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: Colors.red,
-                width: 2,
-              ),
-              borderRadius: BorderRadius.circular(8.0),
-            ),
-            child: Text(
-              '$categoryCount',
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
-          );
-        },
-      ),
-    ],
-  ),
-),
         ],
       ),
     );
