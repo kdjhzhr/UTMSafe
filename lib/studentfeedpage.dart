@@ -620,26 +620,30 @@ void _showEditCommentDialog(String postId, String commentId, String existingComm
         child: const Icon(Icons.add, color: Colors.white),
       ),
       bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: const Color(0xFFF5E9D4),
-        currentIndex: _selectedIndex,
-        selectedItemColor: const Color(0xFF8B0000),
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Feed'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.warning), label: 'Emergency'),
-        ],
-        onTap: (index) {
-          if (index == 1) {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (context) => const SosPage()));
-          } else {
-            setState(() {
-              _selectedIndex = index;
-            });
-          }
-        },
-      ),
+            backgroundColor: const Color(0xFFF5E9D4),
+            currentIndex: _selectedIndex,
+            selectedItemColor: const Color(0xFF8B0000),
+            unselectedItemColor: Colors.grey,
+            items: const [
+              BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Feed'),
+              BottomNavigationBarItem(icon: Icon(Icons.warning), label: 'Emergency'),
+            ],
+            onTap: (index) {
+              if (index == 1) {
+                // Navigate to Emergency page
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SosPage()),
+                );
+              } else if (index == 0) {
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  '/feed',  
+                  (route) => false, 
+                );
+              }
+            },
+          ),
     );
   }
 }
