@@ -2,45 +2,21 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class EarlyMeasurementPage extends StatefulWidget {
+  const EarlyMeasurementPage({super.key});
+
   @override
   _EarlyMeasurementPageState createState() => _EarlyMeasurementPageState();
 }
 
 class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
   final TextEditingController _commentController = TextEditingController();
-  final TextEditingController _searchController = TextEditingController();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  TextEditingController _searchController = TextEditingController();
+  List<Map<String, dynamic>> _filteredTips = [];
 
-  String _searchQuery = ''; // For filtering tips
-
-  // Example list of safety tips to add dynamically
   final List<Map<String, dynamic>> _safetyTips = [
     {
-      'title': 'Check Weather Conditions',
-      'steps': [
-        'Check the weather forecast before heading outdoors.',
-        'Wear suitable clothing based on the weather conditions.',
-        'Carry rain gear if rain is expected.',
-      ],
-    },
-    {
-      'title': 'Stay Hydrated',
-      'steps': [
-        'Carry a water bottle with you.',
-        'Drink water regularly, especially in hot weather.',
-        'Avoid sugary drinks as they can dehydrate you.',
-      ],
-    },
-    {
-      'title': 'Lost Item',
-      'steps': [
-        'Retrace your steps to the last place you saw the item.',
-        'Report the loss to campus security or the lost-and-found department.',
-        'Check with nearby facilities or people who might have found it.',
-        'If the item is valuable (e.g., laptop, wallet), file a report.',
-      ],
-    },
-    {
+      'id': 'monkey_attack',
       'title': 'Monkey Attack',
       'steps': [
         'Stay calm and avoid sudden movements.',
@@ -48,8 +24,11 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
         'If attacked, back away slowly while avoiding eye contact.',
         'Report to campus security immediately.',
       ],
+      'comments': [],
+      'likes': 0,
     },
     {
+      'id': 'snake_encounter',
       'title': 'Snake Encounter',
       'steps': [
         'Keep a safe distance and do not attempt to catch the snake.',
@@ -57,8 +36,11 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
         'Contact campus security for assistance.',
         'Stay alert and avoid walking in tall grass areas.',
       ],
+      'comments': [],
+      'likes': 0,
     },
     {
+      'id': 'fire_emergency',
       'title': 'Fire Emergency',
       'steps': [
         'Activate the nearest fire alarm.',
@@ -66,20 +48,23 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
         'Do not use elevators during evacuation.',
         'Call campus security or fire department.',
       ],
-    },
-    {
-      'title': 'Flooding',
-      'steps': [
-        'Move to higher ground immediately.',
-        'Avoid walking or driving through flooded areas.',
-        'Shut off power if you can do so safely.',
-        'Listen to official warnings and evacuate if necessary.',
-      ],
-      'feedback': null,
       'comments': [],
-      'thumbsUpCount': 0,
+      'likes': 0,
     },
     {
+      'id': 'lost_item',
+      'title': 'Lost Item',
+      'steps': [
+        'Retrace your steps to the last place you saw the item.',
+        'Report the loss to campus security or the lost-and-found department.',
+        'Check with nearby facilities or people who might have found it.',
+        'If the item is valuable (e.g., laptop, wallet), file a report.',
+      ],
+      'comments': [],
+      'likes': 0,
+    },
+    {
+      'id': 'minor_accident',
       'title': 'Minor Accident',
       'steps': [
         'Assess the situation and check for injuries.',
@@ -87,47 +72,11 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
         'Seek medical help if needed or call for an ambulance.',
         'Report the accident to campus security or the appropriate authorities.',
       ],
-      'feedback': null,
       'comments': [],
-      'thumbsUpCount': 0,
+      'likes': 0,
     },
     {
-      'title': 'Medical Emergency',
-      'steps': [
-        'Call campus security or an ambulance right away.',
-        'Provide the exact location and nature of the emergency.',
-        'If the person is conscious, reassure them and keep them calm.',
-        'If the person is unconscious, perform necessary first aid until help arrives.',
-      ],
-      'feedback': null,
-      'comments': [],
-      'thumbsUpCount': 0,
-    },
-    {
-      'title': 'Earthquake',
-      'steps': [
-        'Drop to the ground, take cover under a sturdy piece of furniture, and hold on.',
-        'Stay inside if you’re indoors; move away from windows and tall objects.',
-        'Once the shaking stops, check for injuries and assess the situation.',
-        'Evacuate only when it is safe to do so.',
-      ],
-      'feedback': null,
-      'comments': [],
-      'thumbsUpCount': 0,
-    },
-    {
-      'title': 'Chemical Spill',
-      'steps': [
-        'Evacuate the area immediately and avoid inhaling fumes.',
-        'Alert campus security and follow their instructions.',
-        'If you are exposed to chemicals, flush affected areas with water and seek medical attention.',
-        'Follow the campus’s hazardous materials safety procedures.',
-      ],
-      'feedback': null,
-      'comments': [],
-      'thumbsUpCount': 0,
-    },
-    {
+      'id': 'electric_shock',
       'title': 'Electric Shock',
       'steps': [
         'Immediately remove yourself from the source of the electric shock if safe to do so.',
@@ -135,151 +84,177 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
         'If the person is unconscious or not breathing, start CPR and continue until help arrives.',
         'Do not touch the person until the power is turned off.',
       ],
-      'feedback': null,
       'comments': [],
-      'thumbsUpCount': 0,
+      'likes': 0,
+    },
+    {
+      'id': 'medical_emergency',
+      'title': 'Medical Emergency',
+      'steps': [
+        'Call campus security or an ambulance right away.',
+        'Provide the exact location and nature of the emergency.',
+        'If the person is conscious, reassure them and keep them calm.',
+        'If the person is unconscious, perform necessary first aid until help arrives.',
+      ],
+      'comments': [],
+      'likes': 0,
+    },
+    {
+      'id': 'flooding',
+      'title': 'Flooding',
+      'steps': [
+        'Move to higher ground immediately.',
+        'Avoid walking or driving through flooded areas.',
+        'Shut off power if you can do so safely.',
+        'Listen to official warnings and evacuate if necessary.',
+      ],
+      'comments': [],
+      'likes': 0,
+    },
+    {
+      'id': 'earthquake',
+      'title': 'Earthquake',
+      'steps': [
+        'Drop to the ground, take cover under a sturdy piece of furniture, and hold on.',
+        'Stay inside if you’re indoors; move away from windows and tall objects.',
+        'Once the shaking stops, check for injuries and assess the situation.',
+        'Evacuate only when it is safe to do so.',
+      ],
+      'comments': [],
+      'likes': 0,
+    },
+    {
+      'id': 'building_collapse',
+      'title': 'Building Collapse',
+      'steps': [
+        'If inside, take cover under sturdy furniture to protect yourself from falling debris.',
+        'Once the shaking stops, carefully check for injuries and evacuate if possible.',
+        'If trapped, remain calm, make noise to alert rescuers, and avoid unnecessary movement.',
+      ],
+      'comments': [],
+      'likes': 0,
+    },
+    {
+      'id': 'chemical_spill',
+      'title': 'Chemical Spill',
+      'steps': [
+        'Evacuate the area immediately and avoid inhaling fumes.',
+        'Alert campus security and follow their instructions.',
+        'If you are exposed to chemicals, flush affected areas with water and seek medical attention.',
+        'Follow the campus’s hazardous materials safety procedures.',
+      ],
+      'comments': [],
+      'likes': 0,
+    },
+    {
+      'id': 'active_shooter',
+      'title': 'Active Shooter',
+      'steps': [
+        'If possible, run to a safe location or lock yourself in a room.',
+        'If running is not an option, hide behind furniture or in closets.',
+        'If you cannot escape or hide, prepare to defend yourself as a last resort.',
+        'Call campus security or emergency services as soon as possible.',
+      ],
+      'comments': [],
+      'likes': 0,
+    },
+    {
+      'id': 'heat_stroke',
+      'title': 'Heat Stroke/Exhaustion',
+      'steps': [
+        'Move to a cooler place immediately and rest.',
+        'Drink water slowly to rehydrate.',
+        'Loosen tight clothing and apply cool, damp cloths to the skin.',
+        'If symptoms persist, seek medical attention immediately.',
+      ],
+      'comments': [],
+      'likes': 0,
     },
   ];
 
-  // Function to add a new safety tip dynamically to Firestore
-  Future<void> _addNewTip() async {
-    try {
-      // Get the latest document index in Firestore (for generating tips_0, tips_1, etc.)
-      QuerySnapshot snapshot = await _firestore.collection('safety_tips').get();
-      int newTipIndex = snapshot.docs.length;
-
-      // Loop through the new safety tips list
-      for (int i = 0; i < _safetyTips.length; i++) {
-        final tip = _safetyTips[i];
-
-        // Dynamically create the document name based on the current index (e.g., tip_0, tip_1, etc.)
-        String docName = 'tip_${newTipIndex + i}';
-
-        // Add the new tip to Firestore with only the necessary fields (comments collection and thumbsUpCount)
-        await _firestore.collection('safety_tips').doc(docName).set({
-          'thumbsUpCount': 0, // Initial thumbsUpCount
-        });
-
-        // Add an empty comments subcollection under each tip document
+  // Function to add a comment to Firebase Firestore
+  Future<void> _addComment(String tipId) async {
+    if (_commentController.text.isNotEmpty) {
+      try {
         await _firestore
             .collection('safety_tips')
-            .doc(docName)
+            .doc(tipId)
             .collection('comments')
-            .get()
-            .then((querySnapshot) {
-          querySnapshot.docs.forEach((doc) {
-            doc.reference.delete();
-          });
-        });
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('New safety tips added successfully!')),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to add new tips: $e')),
-      );
-    }
-  }
-
-  // Function to update thumbs up feedback in Firestore
-  Future<void> _setFeedback(int index, String feedbackType) async {
-    try {
-      // Get the document reference for the safety tip
-      DocumentReference tipDoc =
-          _firestore.collection('safety_tips').doc('tip_$index');
-
-      // Update the thumbs up count based on feedback type
-      if (feedbackType == 'thumbs_up') {
-        // Get the current thumbs up count, increment it and update
-        await _firestore.runTransaction((transaction) async {
-          DocumentSnapshot snapshot = await transaction.get(tipDoc);
-
-          if (snapshot.exists) {
-            // Get current thumbsUpCount, if it exists, otherwise set to 0
-            int currentThumbsUpCount = snapshot['thumbsUpCount'] ?? 0;
-
-            // Increment the thumbs up count
-            transaction.update(tipDoc, {
-              'thumbsUpCount': currentThumbsUpCount + 1,
-            });
-          }
-        });
-      }
-
-      setState(() {
-        // Update local feedback state (for UI changes)
-      });
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to update thumbs up: $e')),
-      );
-    }
-  }
-
-  // Function to filter safety tips based on the search query
-  List<Map<String, dynamic>> _getFilteredTips() {
-    if (_searchQuery.isEmpty) {
-      return _safetyTips;
-    }
-    return _safetyTips
-        .where((tip) =>
-            tip['title'].toLowerCase().contains(_searchQuery.toLowerCase()))
-        .toList();
-  }
-
-  // Function to add a comment for a specific safety tip
-  Future<void> _addComment(int index) async {
-    final String commentText = _commentController.text.trim();
-    if (commentText.isNotEmpty) {
-      try {
-        // Add comment to Firestore under the 'comments' subcollection
-        DocumentReference tipDoc =
-            _firestore.collection('safety_tips').doc('tip_$index');
-        await tipDoc.collection('comments').add({
-          'text': commentText,
-          // Remove 'createdAt' field so that no timestamp is automatically added
-        });
-
-        setState(() {
-          // Update local state (for UI changes)
+            .add({
+          'text': _commentController.text,
+          'timestamp': FieldValue.serverTimestamp(),
         });
         _commentController.clear();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Comment added successfully.')),
+        );
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to add comment: $e')),
         );
       }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Comment cannot be empty.')),
+      );
     }
   }
 
-  // Function to get comments from Firestore for a specific tip
-  Stream<QuerySnapshot> _getComments(int index) {
+  Future<void> _incrementLikes(String id) async {
+    try {
+      final tipRef = _firestore.collection('safety_tips').doc(id);
+      final docSnapshot = await tipRef.get();
+      if (docSnapshot.exists) {
+        await tipRef.update({
+          'likes': FieldValue.increment(1),
+        });
+      } else {
+        await tipRef.set({
+          'likes': 1,
+        });
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Like added successfully.')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to add like: $e')),
+      );
+    }
+  }
+
+  // Function to get comments from Firestore
+  Stream<QuerySnapshot> _getComments(String tipId) {
     return _firestore
         .collection('safety_tips')
-        .doc('tip_$index')
+        .doc(tipId)
         .collection('comments')
-        .snapshots(); // Removed ordering by 'createdAt'
+        .orderBy('timestamp')
+        .snapshots();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _filteredTips = _safetyTips; // Initially display all tips
+    _searchController.addListener(_searchTips); // Set up search listener
+  }
+
+  void _searchTips() {
+    String query = _searchController.text.toLowerCase();
+    setState(() {
+      _filteredTips = _safetyTips
+          .where((tip) => tip['title'].toLowerCase().contains(query))
+          .toList();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final filteredTips = _getFilteredTips();
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Early Measurement Tips'),
         backgroundColor: const Color(0xFFF5E9D4),
-        actions: [
-          // Add the "+" button to the AppBar actions
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: _addNewTip, // Your logic to add a new tip
-            tooltip: 'Add New Tip',
-            color: const Color.fromARGB(255, 245, 225, 190),
-          ),
-        ],
       ),
       body: Column(
         children: [
@@ -288,23 +263,17 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
             child: TextField(
               controller: _searchController,
               decoration: const InputDecoration(
-                hintText: 'Search Safety Tips',
+                hintText: 'Search for safety tips...',
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.search),
               ),
-              onChanged: (query) {
-                setState(() {
-                  _searchQuery = query;
-                });
-              },
             ),
           ),
           Expanded(
             child: ListView.builder(
-              itemCount: filteredTips.length,
+              itemCount: _filteredTips.length, // Use filtered list here
               itemBuilder: (context, index) {
-                final tip = filteredTips[index];
-
+                final tip = _filteredTips[index]; // Use filtered list
                 return Card(
                   margin: const EdgeInsets.symmetric(
                       vertical: 8.0, horizontal: 16.0),
@@ -339,132 +308,108 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
                       ),
                       const Divider(thickness: 2, color: Color(0xFF8B0000)),
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'Was this helpful?',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF8B0000),
-                              ),
-                            ),
-                            Row(
-                              children: [
-                                IconButton(
-                                  icon: Icon(
-                                    Icons.thumb_up,
-                                    color: Colors.grey,
-                                  ),
-                                  onPressed: () {
-                                    _setFeedback(index, 'thumbs_up');
-                                  },
-                                ),
-                                StreamBuilder<DocumentSnapshot>(
-                                  stream: _firestore
-                                      .collection('safety_tips')
-                                      .doc('tip_$index')
-                                      .snapshots(),
-                                  builder: (context, snapshot) {
-                                    if (snapshot.connectionState ==
-                                        ConnectionState.waiting) {
-                                      return const CircularProgressIndicator();
-                                    }
-                                    if (snapshot.hasData) {
-                                      return Text(
-                                        snapshot.data!['thumbsUpCount']
-                                            .toString(),
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: Color(0xFF8B0000),
-                                        ),
-                                      );
-                                    }
-                                    return const Text('0');
-                                  },
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Divider(thickness: 2, color: Color(0xFF8B0000)),
-                      Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.comment,
-                                    color: Color(0xFF8B0000),
-                                  ),
-                                  onPressed: () {
-                                    showDialog(
-                                      context: context,
-                                      builder: (BuildContext context) {
-                                        return AlertDialog(
-                                          title: const Text('Add a Comment'),
-                                          content: TextField(
-                                            controller: _commentController,
-                                            decoration: const InputDecoration(
-                                              hintText: 'Enter your comment...',
-                                            ),
-                                          ),
-                                          actions: <Widget>[
-                                            TextButton(
-                                              child: const Text('Cancel'),
-                                              onPressed: () {
-                                                Navigator.of(context).pop();
-                                              },
-                                            ),
-                                            TextButton(
-                                              child: const Text('Submit'),
-                                              onPressed: () {
-                                                _addComment(index);
-                                                Navigator.of(context).pop();
-                                              },
-                                            ),
-                                          ],
+                                Row(
+                                  children: [
+                                    const Text(
+                                      'Comments:',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                          color: Color(0xFF8B0000)),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.comment,
+                                          color: Color(0xFF8B0000)),
+                                      onPressed: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (BuildContext context) {
+                                            return AlertDialog(
+                                              title:
+                                                  const Text('Add a Comment'),
+                                              content: TextField(
+                                                controller: _commentController,
+                                                decoration: const InputDecoration(
+                                                    hintText:
+                                                        'Type your comment here...'),
+                                              ),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed: () {
+                                                    _addComment(tip['id']);
+                                                    Navigator.of(context).pop();
+                                                  },
+                                                  child:
+                                                      const Text('Add Comment'),
+                                                ),
+                                                TextButton(
+                                                  onPressed: () {
+                                                    Navigator.of(context).pop();
+                                                  },
+                                                  child: const Text('Cancel'),
+                                                ),
+                                              ],
+                                            );
+                                          },
                                         );
                                       },
-                                    );
-                                  },
+                                    ),
+                                  ],
                                 ),
-                                const Text(
-                                  'Comment:',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF8B0000),
-                                  ),
+                                Row(
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.thumb_up,
+                                          color: Color(0xFF8B0000)),
+                                      onPressed: () {
+                                        _incrementLikes(tip[
+                                            'id']); // Call the function to update likes in Firestore
+                                        setState(() {
+                                          tip['likes'] = (tip['likes'] ?? 0) +
+                                              1; // Update the local like count
+                                        });
+                                      },
+                                    ),
+                                    Text(
+                                      '${tip['likes'] ?? 0}',
+                                      style: const TextStyle(
+                                          color: Color(0xFF8B0000),
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
-                            StreamBuilder<QuerySnapshot>(
-                              stream: _getComments(index),
-                              builder: (context, snapshot) {
-                                if (snapshot.connectionState ==
-                                    ConnectionState.waiting) {
-                                  return const CircularProgressIndicator();
-                                }
-                                if (snapshot.hasData) {
+                            SizedBox(
+                              height: 100,
+                              child: StreamBuilder<QuerySnapshot>(
+                                stream: _getComments(tip['id']),
+                                builder: (context, snapshot) {
+                                  if (!snapshot.hasData) {
+                                    return const Center(
+                                        child: CircularProgressIndicator());
+                                  }
+
                                   final comments = snapshot.data!.docs;
                                   return ListView.builder(
-                                    shrinkWrap: true,
                                     itemCount: comments.length,
-                                    itemBuilder: (context, index) {
-                                      final comment = comments[index];
+                                    itemBuilder: (context, commentIndex) {
+                                      final comment = comments[commentIndex];
                                       return ListTile(
-                                        title: Text(comment['text']),
+                                        title:
+                                            Text(comment['text'] ?? 'No text'),
                                       );
                                     },
                                   );
-                                }
-                                return const Text('No comments yet.');
-                              },
+                                },
+                              ),
                             ),
                           ],
                         ),
