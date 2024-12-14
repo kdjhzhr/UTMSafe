@@ -12,15 +12,12 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController fullNameController =
-      TextEditingController(); // Full Name Controller
-  final TextEditingController phoneController =
-      TextEditingController(); // Phone Number Controller
-  final TextEditingController codeController =
-      TextEditingController(); // Code controller for auxiliary police
+  final TextEditingController fullNameController = TextEditingController();
+  final TextEditingController phoneController = TextEditingController();
+  final TextEditingController codeController = TextEditingController();
   String? userType;
   final String auxiliaryPoliceCode =
-      '12345'; // Predefined code for auxiliary police
+      '12345'; // Security code for auxiliary police
 
   @override
   Widget build(BuildContext context) {
@@ -42,22 +39,15 @@ class _RegisterPageState extends State<RegisterPage> {
               const SizedBox(height: 16),
               _buildRoleCard('UTM Student', 'student'),
               const SizedBox(height: 24),
-
-              // New Full Name field
               _buildTextField('Full Name', fullNameController),
               const SizedBox(height: 16),
-
-              // New Phone Number field
               _buildTextField('Phone Number', phoneController),
               const SizedBox(height: 16),
-
-              // Email and password fields
               _buildTextField('Email', emailController),
               const SizedBox(height: 16),
               _buildTextField('Password', passwordController,
                   obscureText: true),
               const SizedBox(height: 16),
-
               // Show code input only if the user is auxiliary police
               if (userType == 'auxiliary_police') ...[
                 _buildTextField('Enter Code', codeController),
@@ -163,7 +153,6 @@ class _RegisterPageState extends State<RegisterPage> {
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
     final code = codeController.text.trim();
-
     // Derive username from email
     final username = email.split('@')[0];
 
