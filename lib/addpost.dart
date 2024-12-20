@@ -77,7 +77,7 @@ class _AddPostScreenState extends State<AddPostScreen> {
               leading: const Icon(Icons.photo_library),
               title: const Text('Choose from Gallery'),
               onTap: () async {
-                Navigator.pop(context); // Close the bottom sheet
+                Navigator.pop(context); 
                 final XFile? file = await picker.pickImage(source: ImageSource.gallery);
                 if (file != null) {
                   await _uploadImage(file);
