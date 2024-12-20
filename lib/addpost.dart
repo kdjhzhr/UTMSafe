@@ -23,17 +23,22 @@ class _AddPostScreenState extends State<AddPostScreen> {
   String? _selectedCategory;
 
   final List<String> _categories = [
-    'Monkey Attack',
-    'Snake Encounter',
+    'Animal Encounter',
+    'Theft',
     'Fire Emergency',
-    'Minor Accident',
-    'Electric Shock'
+    'Road Closure',
+    'Power Outage',
+    'Lost Item',
+    'Medical Emergency',
+    'Transportation Incident',
+    'Infrastructure Failure',
+    'Property Damage'
   ];
 
   @override
   void initState() {
     super.initState();
-    _fetchUsername(); // Fetch username on screen load
+    _fetchUsername(); 
   }
 
   Future<void> _fetchUsername() async {
@@ -48,13 +53,43 @@ class _AddPostScreenState extends State<AddPostScreen> {
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    final XFile? file = await picker.pickImage(source: ImageSource.camera);
 
-    if (file != null) {
-      await _uploadImage(file);
-    } else {
-      print("No image selected");
-    }
+    // Show a dialog with options
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Capture Photo'),
+              onTap: () async {
+                Navigator.pop(context); // Close the bottom sheet
+                final XFile? file = await picker.pickImage(source: ImageSource.camera);
+                if (file != null) {
+                  await _uploadImage(file);
+                } else {
+                  print("No image selected from camera");
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Choose from Gallery'),
+              onTap: () async {
+                Navigator.pop(context); // Close the bottom sheet
+                final XFile? file = await picker.pickImage(source: ImageSource.gallery);
+                if (file != null) {
+                  await _uploadImage(file);
+                } else {
+                  print("No image selected from gallery");
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _uploadImage(XFile pickedFile) async {
