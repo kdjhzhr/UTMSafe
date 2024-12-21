@@ -11,7 +11,7 @@ class Report extends StatefulWidget {
 
 class _ReportState extends State<Report> {
   String _timeFilter = 'This Week';
-  String _chartType = 'Line Chart';
+  String _chartType = 'Bar Chart';
   String _selectedCategory = 'Category';
 
   // Fetches incident post counts for graph data.
@@ -205,11 +205,16 @@ FutureBuilder<Map<String, dynamic>>(
                     isExpanded: true,
                     items: <String>[
                       'Category',
+                      'Animal Encounter',
+                      'Theft',
                       'Fire Emergency',
-                      'Snake Encounter',
-                      'Monkey Attack',
-                      'Electric Shock',
-                      'Minor Accident'
+                      'Road Closure',
+                      'Power Outage',
+                      'Lost Item',
+                      'Medical Emergency',
+                      'Transportation Incident',
+                      'Infrastructure Failure',
+                      'Property Damage'
                     ].map<DropdownMenuItem<String>>((String value) {
                       return DropdownMenuItem<String>(
                         value: value,
@@ -310,7 +315,7 @@ FutureBuilder<Map<String, dynamic>>(
                 _chartType = newValue!;
               });
             },
-            items: <String>['Line Chart', 'Pie Chart']
+            items: <String>['Bar Chart', 'Pie Chart']
                 .map<DropdownMenuItem<String>>((String value) {
               return DropdownMenuItem<String>(
                 value: value,
@@ -371,8 +376,8 @@ FutureBuilder<Map<String, dynamic>>(
                     return const Text("Error loading data");
                   }
                   final data = snapshot.data!;
-                  return _chartType == 'Line Chart'
-                      ? _buildLineChart(data, now)
+                  return _chartType == 'Bar Chart'
+                      ? _buildBarChart(data, now)
                       : _buildPieChart(data, now);
                 },
               ),
@@ -383,172 +388,163 @@ FutureBuilder<Map<String, dynamic>>(
     );
   }
 
-  Widget _buildLineChart(List<int> data, DateTime now) {
-    // Define days of the week
-    List<String> xLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  Widget _buildBarChart(List<int> data, DateTime now) {
+  // Generate a list of the past 7 days (formatted as "dd/MM")
+  List<String> xLabels = List.generate(7, (index) {
+    DateTime date = now.subtract(Duration(days: 6 - index));
+    return "${date.day}/${date.month}";
+  });
 
-    // Find the maximum value in the data for dynamic scaling
-    int maxValue = data.reduce((a, b) => a > b ? a : b);
-    int yMax = (maxValue > 0) ? maxValue + 1 : 1; // Ensure a non-zero Y-axis
+  // Find the maximum value in the data for dynamic scaling
+  int maxValue = data.reduce((a, b) => a > b ? a : b);
+  int yMax = (maxValue > 0) ? maxValue + 1 : 1; // Ensure a non-zero Y-axis
 
-    // Map the data to FlSpot
-    List<FlSpot> spots = data
-        .asMap()
-        .entries
-        .map((entry) => FlSpot(
-              entry.key.toDouble(),
-              entry.value.toDouble(),
-            ))
-        .toList();
+  // Map the data to BarChartGroupData
+  List<BarChartGroupData> barGroups = data
+      .asMap()
+      .entries
+      .map((entry) => BarChartGroupData(
+            x: entry.key,
+            barRods: [
+              BarChartRodData(
+                toY: entry.value.toDouble(),
+                color: Colors.red,
+                width: 15,
+                borderRadius: BorderRadius.circular(4),
+              )
+            ],
+          ))
+      .toList();
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-      child: LineChart(
-        LineChartData(
-          borderData: FlBorderData(
-              show: true, border: Border.all(color: Colors.black, width: 1)),
-          gridData: const FlGridData(
-              show: true, horizontalInterval: 1, verticalInterval: 1),
-          titlesData: FlTitlesData(
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                  showTitles: true,
-                  getTitlesWidget: (value, meta) {
-                    return Text(value.toInt().toString(),
-                        style: const TextStyle(fontSize: 12));
-                  }),
-              axisNameWidget: const Text('Incident Post Count',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-              axisNameSize: 16,
-            ),
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+    child: BarChart(
+      BarChartData(
+        borderData: FlBorderData(
+            show: true, border: Border.all(color: Colors.black, width: 1)),
+        gridData: const FlGridData(
+            show: true, horizontalInterval: 1, verticalInterval: 1),
+        titlesData: FlTitlesData(
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
                 showTitles: true,
-                interval: 1, // Ensure titles appear at regular intervals
                 getTitlesWidget: (value, meta) {
-                  int index = value.round(); // Round value to an integer
-                  if (index >= 0 && index < xLabels.length) {
-                    return Text(xLabels[index],
-                        style: const TextStyle(fontSize: 12));
-                  }
-                  return const Text(
-                      ''); // Return empty for out-of-bounds indices
-                },
-              ),
-              axisNameWidget: const Text('Days',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-              axisNameSize: 16,
-            ),
-            topTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles:
-                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  return Text(value.toInt().toString(),
+                      style: const TextStyle(fontSize: 12));
+                }),
+            axisNameWidget: const Text('Incident Post Count',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+            axisNameSize: 16,
           ),
-          maxY: yMax.toDouble(), // Dynamically adjust the Y-axis max value
-          lineBarsData: [
-            LineChartBarData(
-              spots: spots,
-              isCurved: true,
-              color: Colors.red,
-              barWidth: 3,
-              belowBarData: BarAreaData(show: false),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              interval: 1, // Ensure titles appear at regular intervals
+              getTitlesWidget: (value, meta) {
+                int index = value.round(); // Round value to an integer
+                if (index >= 0 && index < xLabels.length) {
+                  return Text(xLabels[index],
+                      style: const TextStyle(fontSize: 12));
+                }
+                return const Text(''); // Return empty for out-of-bounds indices
+              },
+            ),
+            axisNameWidget: const Text('Dates',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+            axisNameSize: 16,
+          ),
+          topTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        ),
+        maxY: yMax.toDouble(), // Dynamically adjust the Y-axis max value
+        barGroups: barGroups,
+      ),
+    ),
+  );
+}
+
+Widget _buildPieChart(List<int> data, DateTime now) {
+  List<Color> pieChartColors = [
+    Colors.blue, // Monday
+    Colors.green, // Tuesday
+    Colors.orange, // Wednesday
+    Colors.red, // Thursday
+    Colors.purple, // Friday
+    Colors.yellow, // Saturday
+    Colors.teal, // Sunday
+  ];
+
+  List<String> dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  List<PieChartSectionData> pieSections = [];
+
+  // Create pie chart sections
+  for (int i = 0; i < data.length; i++) {
+    if (data[i] > 0) {
+      pieSections.add(PieChartSectionData(
+        color: pieChartColors[i], // Assign each day a different color
+        value: data[i].toDouble(),
+        title: "${data[i]}", // Display count in the chart section
+        radius: 50,
+        titleStyle: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      ));
+    }
+  }
+
+  return data.every((value) => value == 0)
+      ? const Center(child: Text("No data to display"))
+      : Column(
+          children: [
+            Expanded(
+              child: PieChart(
+                PieChartData(
+                  sections: pieSections,
+                  borderData: FlBorderData(show: false),
+                  sectionsSpace: 2, // Space between sections
+                ),
+              ),
+            ),
+            // Indicator (Legend) for each day with dates
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(data.length, (index) {
+                  if (data[index] > 0) {
+                    // Correctly align the weekday with its corresponding date
+                    int daysOffset = (index - (now.weekday - 1));
+                    DateTime date = now.add(Duration(days: daysOffset));
+
+                    String dateLabel = "${date.day}/${date.month}";
+
+                    return Row(
+                      children: [
+                        Container(
+                          width: 20,
+                          height: 20,
+                          color: pieChartColors[index], // Day-specific color
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          "${dayLabels[index]} ($dateLabel)", // Include date
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                        const SizedBox(width: 16),
+                      ],
+                    );
+                  } else {
+                    return const SizedBox(); // Skip empty days
+                  }
+                }),
+              ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPieChart(List<int> data, DateTime now) {
-    List<Color> pieChartColors = [
-      Colors.blue, // Monday
-      Colors.green, // Tuesday
-      Colors.orange, // Wednesday
-      Colors.red, // Thursday
-      Colors.purple, // Friday
-      Colors.teal, // Saturday
-      Colors.yellow, // Sunday
-    ];
-
-    List<String> dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-    List<PieChartSectionData> pieSections = [];
-
-    // Create pie chart sections
-    for (int i = 0; i < data.length; i++) {
-      if (data[i] > 0) {
-        pieSections.add(PieChartSectionData(
-          color: pieChartColors[i], // Assign each day a different color
-          value: data[i].toDouble(),
-          title: "${data[i]}", // Display count in the chart section
-          radius: 50,
-          titleStyle: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ));
-      }
-    }
-
-    return data.every((value) => value == 0)
-        ? const Center(child: Text("No data to display"))
-        : Column(
-            children: [
-              Expanded(
-                child: PieChart(
-                  PieChartData(
-                    sections: pieSections,
-                    borderData: FlBorderData(show: false),
-                    sectionsSpace: 2, // Space between sections
-                  ),
-                ),
-              ),
-              // Indicator (Legend) for each day
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(data.length, (index) {
-                    if (data[index] > 0) {
-                      return Row(
-                        children: [
-                          Container(
-                            width: 20,
-                            height: 20,
-                            color: pieChartColors[index], // Day-specific color
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            dayLabels[index],
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                          const SizedBox(width: 16),
-                        ],
-                      );
-                    } else {
-                      return const SizedBox(); // Skip empty days
-                    }
-                  }),
-                ),
-              ),
-            ],
-          );
-  }
-
-  String _getDayOfWeek(DateTime date) {
-    return date.weekday == DateTime.monday
-        ? 'Mon'
-        : date.weekday == DateTime.tuesday
-            ? 'Tue'
-            : date.weekday == DateTime.wednesday
-                ? 'Wed'
-                : date.weekday == DateTime.thursday
-                    ? 'Thu'
-                    : date.weekday == DateTime.friday
-                        ? 'Fri'
-                        : date.weekday == DateTime.saturday
-                            ? 'Sat'
-                            : 'Sun';
-  }
+        );
+}
 }
