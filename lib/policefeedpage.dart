@@ -210,12 +210,45 @@ class _PoliceInterfaceState extends State<PoliceInterface> {
             IconButton(
               icon: const Icon(Icons.logout, color: Color(0xFF8B0000)),
               onPressed: () async {
-                try {
-                  await _auth.signOut();
-                  Navigator.pushNamedAndRemoveUntil(
-                      context, '/', (route) => false);
-                } catch (e) {
-                  print("Error during logout: $e");
+                // Show confirmation dialog
+                bool? confirmLogout = await showDialog<bool>(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      title: const Text('Confirm Logout'),
+                      content: const Text('Are you sure you want to log out?'),
+                      actions: <Widget>[
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context)
+                                .pop(false); // User cancels logout
+                          },
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context)
+                                .pop(true); // User confirms logout
+                          },
+                          child: const Text('Logout'),
+                        ),
+                      ],
+                    );
+                  },
+                );
+
+                // Proceed with logout if confirmed
+                if (confirmLogout ?? false) {
+                  try {
+                    await _auth.signOut();
+                    Navigator.pushNamedAndRemoveUntil(
+                        context,
+                        '/',
+                        (route) =>
+                            false); // Navigate to home screen after logout
+                  } catch (e) {
+                    print("Error during logout: $e");
+                  }
                 }
               },
             ),

@@ -136,52 +136,52 @@ class _FeedPageState extends State<FeedPage> {
             snapshot.docs.map((doc) => Post.fromFirestore(doc)).toList());
   }
 
-Future<void> _showEditPostDialog(Post post) async {
-  if (post.name != _username) {
-    // If the logged-in user is not the post owner, don't show the edit dialog
-    return;
-  }
+  Future<void> _showEditPostDialog(Post post) async {
+    if (post.name != _username) {
+      // If the logged-in user is not the post owner, don't show the edit dialog
+      return;
+    }
 
-  final descriptionController = TextEditingController(text: post.description);
+    final descriptionController = TextEditingController(text: post.description);
 
-  showDialog(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: const Text("Edit Post"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: descriptionController,
-              decoration: const InputDecoration(hintText: "Edit description"),
-              maxLines: 3,
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Edit Post"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: descriptionController,
+                decoration: const InputDecoration(hintText: "Edit description"),
+                maxLines: 3,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () {
+                final newDescription = descriptionController.text.trim();
+
+                if (newDescription.isNotEmpty) {
+                  _updatePost(post.id, newDescription);
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text("Save"),
             ),
           ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            child: const Text("Cancel"),
-          ),
-          TextButton(
-            onPressed: () {
-              final newDescription = descriptionController.text.trim();
-
-              if (newDescription.isNotEmpty) {
-                _updatePost(post.id, newDescription);
-                Navigator.pop(context);
-              }
-            },
-            child: const Text("Save"),
-          ),
-        ],
-      );
-    },
-  );
-}
+        );
+      },
+    );
+  }
 
   Future<void> _updatePost(String postId, String description) async {
     try {
@@ -248,7 +248,6 @@ Future<void> _showEditPostDialog(Post post) async {
       for (var commentDoc in commentsSnapshot.docs) {
         await commentDoc.reference.delete();
       }
-
     } catch (e) {
       print("Error deleting post: $e");
       ScaffoldMessenger.of(context).showSnackBar(
@@ -257,22 +256,21 @@ Future<void> _showEditPostDialog(Post post) async {
     }
   }
 
-Future<void> _deleteComment(String postId, String commentId) async {
-  try {
-    await _firestore
-        .collection('posts')
-        .doc(postId)
-        .collection('comments')
-        .doc(commentId)
-        .delete();
-
-  } catch (e) {
-    print("Error deleting comment: $e");
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Failed to delete comment')),
-    );
+  Future<void> _deleteComment(String postId, String commentId) async {
+    try {
+      await _firestore
+          .collection('posts')
+          .doc(postId)
+          .collection('comments')
+          .doc(commentId)
+          .delete();
+    } catch (e) {
+      print("Error deleting comment: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to delete comment')),
+      );
+    }
   }
-}
 
   void _showAddCommentDialog(String postId) {
     final commentController = TextEditingController();
@@ -309,114 +307,123 @@ Future<void> _deleteComment(String postId, String commentId) async {
     );
   }
 
-void _showEditCommentDialog(String postId, String commentId, String existingComment) {
-  final _controller = TextEditingController(text: existingComment);
-  final commentRef = _firestore.collection('posts').doc(postId).collection('comments').doc(commentId);
+  void _showEditCommentDialog(
+      String postId, String commentId, String existingComment) {
+    final _controller = TextEditingController(text: existingComment);
+    final commentRef = _firestore
+        .collection('posts')
+        .doc(postId)
+        .collection('comments')
+        .doc(commentId);
 
-  commentRef.get().then((commentSnapshot) {
-    if (commentSnapshot.exists) {
-      final commentData = commentSnapshot.data() as Map<String, dynamic>;
-      final commentOwner = commentData['userName'];
+    commentRef.get().then((commentSnapshot) {
+      if (commentSnapshot.exists) {
+        final commentData = commentSnapshot.data() as Map<String, dynamic>;
+        final commentOwner = commentData['userName'];
 
-      if (commentOwner != _username) {
-        return;
+        if (commentOwner != _username) {
+          return;
+        }
+
+        showDialog(
+          context: context,
+          builder: (context) {
+            return AlertDialog(
+              title: const Text('Edit Comment'),
+              content: TextField(
+                controller: _controller,
+                decoration:
+                    const InputDecoration(hintText: 'Edit your comment'),
+                maxLines: 3,
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    _updateComment(postId, commentId, _controller.text);
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
+        );
       }
+    });
+  }
 
-      showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: const Text('Edit Comment'),
-            content: TextField(
-              controller: _controller,
-              decoration: const InputDecoration(hintText: 'Edit your comment'),
-              maxLines: 3,
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () {
-                  _updateComment(postId, commentId, _controller.text);
-                  Navigator.of(context).pop();
-                },
-                child: const Text('Save'),
-              ),
-            ],
-          );
-        },
+  void _showDeletePostDialog(String postId, String postOwner) {
+    if (_username != postOwner) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('You are not authorized to delete this post')),
       );
+      return;
     }
-  });
-}
 
-void _showDeletePostDialog(String postId, String postOwner) {
-  if (_username != postOwner) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('You are not authorized to delete this post')),
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Delete Post'),
+          content: const Text('Are you sure you want to delete this post?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                _deletePost(postId);
+                Navigator.pop(context);
+              },
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
     );
-    return;
   }
 
-  showDialog(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: const Text('Delete Post'),
-        content: const Text('Are you sure you want to delete this post?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              _deletePost(postId);
-              Navigator.pop(context);
-            },
-            child: const Text('Delete'),
-          ),
-        ],
+  void _showDeleteCommentDialog(
+      String postId, String commentId, String commentOwner) {
+    if (_username != commentOwner) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('You are not authorized to delete this comment')),
       );
-    },
-  );
-}
+      return;
+    }
 
-void _showDeleteCommentDialog(String postId, String commentId, String commentOwner) {
-  if (_username != commentOwner) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('You are not authorized to delete this comment')),
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Delete Comment'),
+          content: const Text('Are you sure you want to delete this comment?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                _deleteComment(postId, commentId);
+                Navigator.pop(context);
+              },
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
     );
-    return;
   }
-
-  showDialog(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: const Text('Delete Comment'),
-        content: const Text('Are you sure you want to delete this comment?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              _deleteComment(postId, commentId);
-              Navigator.pop(context);
-            },
-            child: const Text('Delete'),
-          ),
-        ],
-      );
-    },
-  );
-}
 
   String _formatTimestamp(Timestamp timestamp) {
     final dateTime = timestamp.toDate();
@@ -424,31 +431,31 @@ void _showDeleteCommentDialog(String postId, String commentId, String commentOwn
   }
 
   String _getCategoryEmoji(String category) {
-  switch (category.toLowerCase()) {
-    case 'fire emergency':
-      return '🔥'; 
-    case 'animal encounter':
-      return '🐾'; 
-    case 'theft':
-      return '🕵️‍♂️'; 
-    case 'road closure':
-      return '🚫'; 
-    case 'power outage':
-      return '🔌'; 
-    case 'lost item':
-      return '🔍'; 
-    case 'medical emergency':
-      return '🚑'; 
-    case 'transportation incident':
-      return '🚌'; 
-    case 'infrastructure failure':
-      return '⚙️'; 
-    case 'property damage':
-      return '🏚️'; 
-    default:
-      return '⚠️'; 
+    switch (category.toLowerCase()) {
+      case 'fire emergency':
+        return '🔥';
+      case 'animal encounter':
+        return '🐾';
+      case 'theft':
+        return '🕵️‍♂️';
+      case 'road closure':
+        return '🚫';
+      case 'power outage':
+        return '🔌';
+      case 'lost item':
+        return '🔍';
+      case 'medical emergency':
+        return '🚑';
+      case 'transportation incident':
+        return '🚌';
+      case 'infrastructure failure':
+        return '⚙️';
+      case 'property damage':
+        return '🏚️';
+      default:
+        return '⚠️';
+    }
   }
-}
 
   // Function to fetch the most common category
   Stream<DocumentSnapshot> _fetchMostCommonCategory() {
@@ -480,12 +487,42 @@ void _showDeleteCommentDialog(String postId, String commentId, String commentOwn
           IconButton(
             icon: const Icon(Icons.logout, color: Color(0xFF8B0000)),
             onPressed: () async {
-              try {
-                await _auth.signOut();
-                Navigator.pushNamedAndRemoveUntil(
-                    context, '/', (route) => false);
-              } catch (e) {
-                print("Error during logout: $e");
+              // Show confirmation dialog
+              bool? confirmLogout = await showDialog<bool>(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: const Text('Confirm Logout'),
+                    content: const Text('Are you sure you want to log out?'),
+                    actions: <Widget>[
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context)
+                              .pop(false); // User cancels logout
+                        },
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context)
+                              .pop(true); // User confirms logout
+                        },
+                        child: const Text('Logout'),
+                      ),
+                    ],
+                  );
+                },
+              );
+
+              // Proceed with logout if confirmed
+              if (confirmLogout ?? false) {
+                try {
+                  await _auth.signOut();
+                  Navigator.pushNamedAndRemoveUntil(context, '/',
+                      (route) => false); // Navigate to home screen after logout
+                } catch (e) {
+                  print("Error during logout: $e");
+                }
               }
             },
           ),
@@ -574,131 +611,203 @@ void _showDeleteCommentDialog(String postId, String commentId, String commentOwn
                               ),
                             // Like and comment buttons
                             Row(
-                                mainAxisAlignment: MainAxisAlignment.start, // Align all items to the left
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.favorite_border, color: Colors.red),
-                                    onPressed: () => _likePost(post.id, post.likes),
-                                  ),
-                                  Text(post.likes.toString()),
+                              mainAxisAlignment: MainAxisAlignment
+                                  .start, // Align all items to the left
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.favorite_border,
+                                      color: Colors.red),
+                                  onPressed: () =>
+                                      _likePost(post.id, post.likes),
+                                ),
+                                Text(post.likes.toString()),
+                                const SizedBox(width: 16),
+                                IconButton(
+                                  icon: const Icon(Icons.comment,
+                                      color: Colors.grey),
+                                  onPressed: () =>
+                                      _showAddCommentDialog(post.id),
+                                ),
+                                StreamBuilder<QuerySnapshot>(
+                                  stream: _firestore
+                                      .collection('posts')
+                                      .doc(post.id)
+                                      .collection('comments')
+                                      .snapshots(),
+                                  builder: (context, snapshot) {
+                                    if (snapshot.connectionState ==
+                                        ConnectionState.waiting) {
+                                      return const CircularProgressIndicator();
+                                    }
+                                    final commentsCount =
+                                        snapshot.data?.docs.length ?? 0;
+                                    return Text('$commentsCount');
+                                  },
+                                ),
+                                if (post.name == _username) ...[
                                   const SizedBox(width: 16),
                                   IconButton(
-                                    icon: const Icon(Icons.comment, color: Colors.grey),
-                                    onPressed: () => _showAddCommentDialog(post.id),
+                                    icon: const Icon(Icons.edit,
+                                        color: Color(0xFF1E3A8A)),
+                                    onPressed: () => _showEditPostDialog(post),
                                   ),
-                                  StreamBuilder<QuerySnapshot>(
-                                    stream: _firestore .collection('posts').doc(post.id).collection('comments').snapshots(),
-                                    builder: (context, snapshot) {
-                                      if (snapshot.connectionState == ConnectionState.waiting) {
-                                        return const CircularProgressIndicator();
-                                      }
-                                      final commentsCount = snapshot.data?.docs.length ?? 0;
-                                      return Text('$commentsCount');
-                                    },
+                                  IconButton(
+                                    icon: const Icon(Icons.delete,
+                                        color: Color(0xFF8B0000)),
+                                    onPressed: () => _showDeletePostDialog(
+                                        post.id, post.name),
                                   ),
-                                  if (post.name == _username) ...[
-                                    const SizedBox(width: 16),
-                                    IconButton(
-                                      icon: const Icon(Icons.edit, color: Color(0xFF1E3A8A)),
-                                      onPressed: () => _showEditPostDialog(post),
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.delete, color: Color(0xFF8B0000)),
-                                      onPressed: () => _showDeletePostDialog(post.id, post.name),
-                                    ),
-                                  ],
                                 ],
-                              ),
+                              ],
+                            ),
                             // View comments dropdown
                             StreamBuilder<QuerySnapshot>(
-                            stream: _firestore.collection('posts').doc(post.id).collection('comments').snapshots(),
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState == ConnectionState.waiting) {
-                                return const CircularProgressIndicator();
-                              }
+                              stream: _firestore
+                                  .collection('posts')
+                                  .doc(post.id)
+                                  .collection('comments')
+                                  .snapshots(),
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return const CircularProgressIndicator();
+                                }
 
-                              final commentsCount = snapshot.data?.docs.length ?? 0;
+                                final commentsCount =
+                                    snapshot.data?.docs.length ?? 0;
 
-                              return commentsCount > 0
-                                  ? ExpansionTile(
-                                      title: const Text('View Comments'),
-                                      children: [
-                                        ListView.builder(
-                                          shrinkWrap: true,
-                                          itemCount: commentsCount,
-                                          itemBuilder: (context, index) {
-                                            final commentData = snapshot.data!.docs[index].data() as Map<String, dynamic>;
-                                            final commentId = snapshot.data!.docs[index].id;
-                                            final commentText = commentData['comment'] ?? '';
-                                            final userName = commentData['userName'] ?? 'Unknown';
-                                            final timestamp = commentData['timestamp'] as Timestamp?;
-                                            final formattedTime = timestamp != null ? _formatTimestamp(timestamp) : 'Unknown time';
+                                return commentsCount > 0
+                                    ? ExpansionTile(
+                                        title: const Text('View Comments'),
+                                        children: [
+                                          ListView.builder(
+                                            shrinkWrap: true,
+                                            itemCount: commentsCount,
+                                            itemBuilder: (context, index) {
+                                              final commentData = snapshot
+                                                      .data!.docs[index]
+                                                      .data()
+                                                  as Map<String, dynamic>;
+                                              final commentId =
+                                                  snapshot.data!.docs[index].id;
+                                              final commentText =
+                                                  commentData['comment'] ?? '';
+                                              final userName =
+                                                  commentData['userName'] ??
+                                                      'Unknown';
+                                              final timestamp =
+                                                  commentData['timestamp']
+                                                      as Timestamp?;
+                                              final formattedTime = timestamp !=
+                                                      null
+                                                  ? _formatTimestamp(timestamp)
+                                                  : 'Unknown time';
 
-                                            return ListTile(
-                                              contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                                              leading: CircleAvatar(
-                                                radius: 20,
-                                                backgroundColor: Colors.grey[300],
-                                                child: const Icon(Icons.person, color: Colors.grey),
-                                              ),
-                                              title: Row(
-                                                children: [
-                                                  Flexible(
-                                                    child: Text(
-                                                      userName,
-                                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                                                      overflow: TextOverflow.ellipsis,
+                                              return ListTile(
+                                                contentPadding:
+                                                    const EdgeInsets.symmetric(
+                                                        vertical: 8,
+                                                        horizontal: 16),
+                                                leading: CircleAvatar(
+                                                  radius: 20,
+                                                  backgroundColor:
+                                                      Colors.grey[300],
+                                                  child: const Icon(
+                                                      Icons.person,
+                                                      color: Colors.grey),
+                                                ),
+                                                title: Row(
+                                                  children: [
+                                                    Flexible(
+                                                      child: Text(
+                                                        userName,
+                                                        style: const TextStyle(
+                                                            fontSize: 16,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .bold),
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                      ),
                                                     ),
-                                                  ),
-                                                  const SizedBox(width: 8),
-                                                  Text(
-                                                    formattedTime,
-                                                    style: const TextStyle(fontSize: 12, color: Colors.grey),
-                                                  ),
-                                                ],
-                                              ),
-                                              subtitle: Text(
-                                                commentText,softWrap: true,overflow: TextOverflow.ellipsis,maxLines: 3,
-                                              ),
-                                              trailing: _username == userName
-                                                  ? PopupMenuButton<String>(
-                                                      icon: const Icon(Icons.more_vert, size: 20), 
-                                                      onSelected: (value) {
-                                                        if (value == 'edit') {
-                                                          _showEditCommentDialog(post.id, commentId, commentText);
-                                                        } else if (value == 'delete') {
-                                                          _showDeleteCommentDialog(post.id, commentId, userName);
-                                                        }
-                                                      },
-                                                      itemBuilder: (context) => [
-                                                        const PopupMenuItem(
-                                                          value: 'edit',
-                                                          child: Row(
-                                                            children: [
-                                                              Icon(Icons.edit, size: 20, color: Color(0xFF1E3A8A)), SizedBox(width: 8), Text('Edit'),
-                                                            ],
+                                                    const SizedBox(width: 8),
+                                                    Text(
+                                                      formattedTime,
+                                                      style: const TextStyle(
+                                                          fontSize: 12,
+                                                          color: Colors.grey),
+                                                    ),
+                                                  ],
+                                                ),
+                                                subtitle: Text(
+                                                  commentText,
+                                                  softWrap: true,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  maxLines: 3,
+                                                ),
+                                                trailing: _username == userName
+                                                    ? PopupMenuButton<String>(
+                                                        icon: const Icon(
+                                                            Icons.more_vert,
+                                                            size: 20),
+                                                        onSelected: (value) {
+                                                          if (value == 'edit') {
+                                                            _showEditCommentDialog(
+                                                                post.id,
+                                                                commentId,
+                                                                commentText);
+                                                          } else if (value ==
+                                                              'delete') {
+                                                            _showDeleteCommentDialog(
+                                                                post.id,
+                                                                commentId,
+                                                                userName);
+                                                          }
+                                                        },
+                                                        itemBuilder:
+                                                            (context) => [
+                                                          const PopupMenuItem(
+                                                            value: 'edit',
+                                                            child: Row(
+                                                              children: [
+                                                                Icon(Icons.edit,
+                                                                    size: 20,
+                                                                    color: Color(
+                                                                        0xFF1E3A8A)),
+                                                                SizedBox(
+                                                                    width: 8),
+                                                                Text('Edit'),
+                                                              ],
+                                                            ),
                                                           ),
-                                                        ),
-                                                        const PopupMenuItem(
-                                                          value: 'delete',
-                                                          child: Row(
-                                                            children:  [
-                                                              Icon(Icons.delete, size: 20, color: Color(0xFF8B0000)), SizedBox(width: 8), Text('Delete'),
-                                                            ],
+                                                          const PopupMenuItem(
+                                                            value: 'delete',
+                                                            child: Row(
+                                                              children: [
+                                                                Icon(
+                                                                    Icons
+                                                                        .delete,
+                                                                    size: 20,
+                                                                    color: Color(
+                                                                        0xFF8B0000)),
+                                                                SizedBox(
+                                                                    width: 8),
+                                                                Text('Delete'),
+                                                              ],
+                                                            ),
                                                           ),
-                                                        ),
-                                                      ],
-                                                    )
-                                                  : null,
-                                            );
-                                          },
-                                        ),
-                                      ],
-                                    )
-                                  : const SizedBox.shrink();
-                            },
-                          ),
-
+                                                        ],
+                                                      )
+                                                    : null,
+                                              );
+                                            },
+                                          ),
+                                        ],
+                                      )
+                                    : const SizedBox.shrink();
+                              },
+                            ),
                           ],
                         ),
                       ),
@@ -727,30 +836,31 @@ void _showDeleteCommentDialog(String postId, String commentId, String commentOwn
         child: const Icon(Icons.add, color: Colors.white),
       ),
       bottomNavigationBar: BottomNavigationBar(
-            backgroundColor: const Color(0xFFF5E9D4),
-            currentIndex: _selectedIndex,
-            selectedItemColor: const Color(0xFF8B0000),
-            unselectedItemColor: Colors.grey,
-            items: const [
-              BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Feed'),
-              BottomNavigationBarItem(icon: Icon(Icons.warning), label: 'Emergency'),
-            ],
-            onTap: (index) {
-              if (index == 1) {
-                // Navigate to Emergency page
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const SosPage()),
-                );
-              } else if (index == 0) {
-                Navigator.pushNamedAndRemoveUntil(
-                  context,
-                  '/feed',  
-                  (route) => false, 
-                );
-              }
-            },
-          ),
+        backgroundColor: const Color(0xFFF5E9D4),
+        currentIndex: _selectedIndex,
+        selectedItemColor: const Color(0xFF8B0000),
+        unselectedItemColor: Colors.grey,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Feed'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.warning), label: 'Emergency'),
+        ],
+        onTap: (index) {
+          if (index == 1) {
+            // Navigate to Emergency page
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const SosPage()),
+            );
+          } else if (index == 0) {
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/feed',
+              (route) => false,
+            );
+          }
+        },
+      ),
     );
   }
 }
