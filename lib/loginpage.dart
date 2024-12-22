@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'studentfeedpage.dart';
 import 'policefeedpage.dart';
 import 'registerpage.dart';
+import 'forgotpassword.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -109,6 +110,22 @@ class _LoginPageState extends State<LoginPage> {
                         },
                       ),
                     ),
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ForgotPasswordPage(),
+                      ),
+                    );
+                  },
+                  child: const Text(
+                    'Forgot Password?',
+                    style: TextStyle(fontSize: 16, color: Color(0xFF8B0000)),
                   ),
                 ),
 
