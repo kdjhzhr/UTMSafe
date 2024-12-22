@@ -31,20 +31,21 @@ class _LoginPageState extends State<LoginPage> {
               children: [
                 Image.asset(
                   'assets/utmsafelogo.png',
-                  width: 200,
-                  height: 200,
+                  width: 250,
+                  height: 250,
                 ),
                 const SizedBox(height: 10),
 
                 const Text(
-                  'Welcome',
+                  'Stay Safe and Stay Informed',
                   style: TextStyle(
-                    fontSize: 30,
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
                     fontFamily: 'Roboto',
+                    fontStyle: FontStyle.italic,
                   ),
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 50),
 
                 // Username text field
                 Padding(
@@ -113,7 +114,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
 
-                const SizedBox(height: 8),
+                const SizedBox(height: 5),
                 TextButton(
                   onPressed: () {
                     Navigator.push(
@@ -146,7 +147,7 @@ class _LoginPageState extends State<LoginPage> {
                     style: TextStyle(fontFamily: 'Roboto', color: Colors.white),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 30),
 
                 // Navigation link to register page
                 TextButton(
