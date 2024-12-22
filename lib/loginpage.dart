@@ -63,6 +63,18 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 8),
+                // Instruction for username
+                Center(
+                  child: const Text(
+                    'Enter the part of your email before the "@" symbol \n (e.g., "ahmad03" for "ahmad03@gmail.com")',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 16),
 
                 // Password text field
