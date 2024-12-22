@@ -18,6 +18,7 @@ class _RegisterPageState extends State<RegisterPage> {
   String? userType;
   final String auxiliaryPoliceCode =
       '12345'; // Security code for auxiliary police
+  bool passwordVisible = false;
 
   @override
   Widget build(BuildContext context) {
@@ -45,8 +46,7 @@ class _RegisterPageState extends State<RegisterPage> {
               const SizedBox(height: 16),
               _buildTextField('Email', emailController),
               const SizedBox(height: 16),
-              _buildTextField('Password', passwordController,
-                  obscureText: true),
+              _buildPasswordField('Password', passwordController),
               const SizedBox(height: 16),
               // Show code input only if the user is auxiliary police
               if (userType == 'auxiliary_police') ...[
@@ -72,6 +72,39 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  // Helper method for the password field with visibility toggle
+  Widget _buildPasswordField(String label, TextEditingController controller) {
+    return TextField(
+      controller: controller,
+      obscureText: !passwordVisible,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: const Icon(
+          Icons.lock,
+          color: Color(0xFF8B0000),
+        ),
+        suffixIcon: IconButton(
+          icon: Icon(
+            passwordVisible ? Icons.visibility : Icons.visibility_off,
+            color: const Color(0xFF8B0000),
+          ),
+          onPressed: () {
+            setState(() {
+              passwordVisible = !passwordVisible;
+            });
+          },
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFF8B0000)),
         ),
       ),
     );
