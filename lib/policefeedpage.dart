@@ -195,7 +195,7 @@ class _PoliceInterfaceState extends State<PoliceInterface> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'UTMSafe',
+          'UTMSafe 🚔',
           style: TextStyle(
             color: Color(0xFF8B0000),
             fontWeight: FontWeight.bold,
