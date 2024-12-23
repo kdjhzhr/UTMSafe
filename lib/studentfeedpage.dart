@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'addpost.dart';
 import 'emergency.dart';
+import 'banner.dart';
 
 class FeedPage extends StatefulWidget {
   const FeedPage({Key? key}) : super(key: key);
@@ -427,7 +428,7 @@ class _FeedPageState extends State<FeedPage> {
 
   String _formatTimestamp(Timestamp timestamp) {
     final dateTime = timestamp.toDate();
-    return DateFormat('dd/MM/yyyy HH:mm').format(dateTime);
+    return DateFormat('dd/MM/yyyy  HH:mm').format(dateTime);
   }
 
   String _getCategoryEmoji(String category) {
@@ -475,7 +476,7 @@ class _FeedPageState extends State<FeedPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'UTMSafe',
+          'UTMSafe 🎓',
           style: TextStyle(
               color: Color(0xFF8B0000),
               fontWeight: FontWeight.bold,
@@ -528,24 +529,34 @@ class _FeedPageState extends State<FeedPage> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Post Stream Builder
+      body: CustomScrollView(
+        slivers: [
+          const SliverAppBar(
+            floating: false,
+            expandedHeight: 150.0,
+            flexibleSpace: FlexibleSpaceBar(
+              background: SafetyBanner(),
+            ),
+          ),
+          // Posts as a SliverList
           StreamBuilder<List<Post>>(
             stream: _fetchPosts(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
+                return const SliverFillRemaining(
+                  child: Center(child: CircularProgressIndicator()),
+                );
               }
               if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return const Center(child: Text("No posts available."));
+                return const SliverFillRemaining(
+                  child: Center(child: Text("No posts available.")),
+                );
               }
 
               final posts = snapshot.data!;
-              return Expanded(
-                child: ListView.builder(
-                  itemCount: posts.length,
-                  itemBuilder: (context, index) {
+              return SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
                     final post = posts[index];
                     return Card(
                       margin: const EdgeInsets.symmetric(
@@ -611,8 +622,7 @@ class _FeedPageState extends State<FeedPage> {
                               ),
                             // Like and comment buttons
                             Row(
-                              mainAxisAlignment: MainAxisAlignment
-                                  .start, // Align all items to the left
+                              mainAxisAlignment: MainAxisAlignment.start,
                               children: [
                                 IconButton(
                                   icon: const Icon(Icons.favorite_border,
@@ -675,7 +685,6 @@ class _FeedPageState extends State<FeedPage> {
 
                                 final commentsCount =
                                     snapshot.data?.docs.length ?? 0;
-
                                 return commentsCount > 0
                                     ? ExpansionTile(
                                         title: const Text('View Comments'),
@@ -813,6 +822,7 @@ class _FeedPageState extends State<FeedPage> {
                       ),
                     );
                   },
+                  childCount: posts.length,
                 ),
               );
             },

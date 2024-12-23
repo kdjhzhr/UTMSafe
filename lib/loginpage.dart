@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'studentfeedpage.dart';
-import 'policefeedpage.dart';
 import 'registerpage.dart';
 import 'forgotpassword.dart';
+import 'welcomepage.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -34,18 +33,18 @@ class _LoginPageState extends State<LoginPage> {
                   width: 250,
                   height: 250,
                 ),
-                const SizedBox(height: 10),
-
-                const Text(
-                  'Stay Safe and Stay Informed',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Roboto',
-                    fontStyle: FontStyle.italic,
+                const SizedBox(height: 5),
+                Center(
+                  child: const Text(
+                    'Your Safety is Our Priority',
+                    style: TextStyle(
+                      fontSize: 20,
+                      color: Colors.black,
+                      fontStyle: FontStyle.italic,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 50),
+                const SizedBox(height: 70),
 
                 // Username text field
                 Padding(
@@ -114,7 +113,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
 
-                const SizedBox(height: 5),
+                const SizedBox(height: 2),
                 TextButton(
                   onPressed: () {
                     Navigator.push(
@@ -126,7 +125,7 @@ class _LoginPageState extends State<LoginPage> {
                   },
                   child: const Text(
                     'Forgot Password?',
-                    style: TextStyle(fontSize: 16, color: Color(0xFF8B0000)),
+                    style: TextStyle(fontSize: 15, color: Colors.grey),
                   ),
                 ),
 
@@ -136,7 +135,7 @@ class _LoginPageState extends State<LoginPage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF8B0000),
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 32, vertical: 12),
+                        horizontal: 50, vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(24),
                     ),
@@ -144,10 +143,13 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   child: const Text(
                     'Log In',
-                    style: TextStyle(fontFamily: 'Roboto', color: Colors.white),
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontFamily: 'Roboto',
+                        color: Colors.white),
                   ),
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 50),
 
                 // Navigation link to register page
                 TextButton(
@@ -211,16 +213,17 @@ class _LoginPageState extends State<LoginPage> {
 
       final role = userDoc.data()?['role'];
 
-      // Navigate based on the role
+      // Navigate to the WelcomePage based on the role
       if (role == 'student') {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => FeedPage()),
+          MaterialPageRoute(builder: (context) => WelcomePage(role: 'student')),
         );
       } else if (role == 'auxiliary_police') {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const PoliceInterface()),
+          MaterialPageRoute(
+              builder: (context) => WelcomePage(role: 'auxiliary_police')),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
