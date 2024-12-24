@@ -362,8 +362,7 @@ class _FeedPageState extends State<FeedPage> {
   void _showDeletePostDialog(String postId, String postOwner) {
     if (_username != postOwner) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('You are not authorized to delete this post')),
+        const SnackBar(content: Text('You are not authorized to delete this post')),
       );
       return;
     }
@@ -498,15 +497,13 @@ class _FeedPageState extends State<FeedPage> {
                     actions: <Widget>[
                       TextButton(
                         onPressed: () {
-                          Navigator.of(context)
-                              .pop(false); // User cancels logout
+                          Navigator.of(context).pop(false); // User cancels logout
                         },
                         child: const Text('Cancel'),
                       ),
                       TextButton(
                         onPressed: () {
-                          Navigator.of(context)
-                              .pop(true); // User confirms logout
+                          Navigator.of(context).pop(true); // User confirms logout
                         },
                         child: const Text('Logout'),
                       ),
@@ -559,8 +556,7 @@ class _FeedPageState extends State<FeedPage> {
                   (context, index) {
                     final post = posts[index];
                     return Card(
-                      margin: const EdgeInsets.symmetric(
-                          vertical: 8, horizontal: 16),
+                      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Column(
@@ -570,27 +566,19 @@ class _FeedPageState extends State<FeedPage> {
                             Row(
                               children: [
                                 CircleAvatar(
-                                  radius: 20,
-                                  backgroundColor: Colors.grey[300],
-                                  child: const Icon(Icons.person,
-                                      color: Colors.grey),
+                                  radius: 20, backgroundColor: Colors.grey[300],
+                                  child: const Icon(Icons.person, color: Colors.grey),
                                 ),
                                 const SizedBox(width: 8),
                                 GestureDetector(
-                                  onTap: () =>
-                                      _showUserDetailsDialog(post.name),
+                                  onTap: () => _showUserDetailsDialog(post.name),
                                   child: Text(
-                                    post.name,
-                                    style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold),
+                                    post.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                                   ),
                                 ),
                                 const Spacer(),
-                                Text(
-                                  _formatTimestamp(post.timestamp),
-                                  style: const TextStyle(
-                                      fontSize: 12, color: Colors.grey),
+                                Text(_formatTimestamp(post.timestamp),
+                                  style: const TextStyle(fontSize: 12, color: Colors.grey),
                                 ),
                               ],
                             ),
@@ -601,14 +589,10 @@ class _FeedPageState extends State<FeedPage> {
                                 child: Row(
                                   children: [
                                     Text(
-                                      _getCategoryEmoji(post.category!) + ' ',
-                                      style: const TextStyle(fontSize: 18),
+                                      _getCategoryEmoji(post.category!) + ' ', style: const TextStyle(fontSize: 18),
                                     ),
-                                    Text(
-                                      '${post.category}',
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: Color(0xFF8B0000)),
+                                    Text('${post.category}', style: const TextStyle(
+                                          fontWeight: FontWeight.bold, color: Color(0xFF8B0000)),
                                     ),
                                   ],
                                 ),
@@ -617,55 +601,41 @@ class _FeedPageState extends State<FeedPage> {
                             Text(post.description),
                             if (post.photoUrl != null)
                               Padding(
-                                padding: const EdgeInsets.only(top: 8.0),
-                                child: Image.network(post.photoUrl!),
+                                padding: const EdgeInsets.only(top: 8.0), child: Image.network(post.photoUrl!),
                               ),
                             // Like and comment buttons
                             Row(
                               mainAxisAlignment: MainAxisAlignment.start,
                               children: [
                                 IconButton(
-                                  icon: const Icon(Icons.favorite_border,
-                                      color: Colors.red),
-                                  onPressed: () =>
-                                      _likePost(post.id, post.likes),
+                                  icon: const Icon(Icons.favorite_border, color: Colors.red),
+                                  onPressed: () => _likePost(post.id, post.likes),
                                 ),
-                                Text(post.likes.toString()),
-                                const SizedBox(width: 16),
+                                Text(post.likes.toString()), const SizedBox(width: 16),
                                 IconButton(
-                                  icon: const Icon(Icons.comment,
-                                      color: Colors.grey),
-                                  onPressed: () =>
-                                      _showAddCommentDialog(post.id),
+                                  icon: const Icon(Icons.comment, color: Colors.grey),
+                                  onPressed: () => _showAddCommentDialog(post.id),
                                 ),
                                 StreamBuilder<QuerySnapshot>(
                                   stream: _firestore
-                                      .collection('posts')
-                                      .doc(post.id)
-                                      .collection('comments')
-                                      .snapshots(),
+                                      .collection('posts').doc(post.id).collection('comments').snapshots(),
                                   builder: (context, snapshot) {
-                                    if (snapshot.connectionState ==
-                                        ConnectionState.waiting) {
+                                    if (snapshot.connectionState == ConnectionState.waiting) {
                                       return const CircularProgressIndicator();
                                     }
-                                    final commentsCount =
-                                        snapshot.data?.docs.length ?? 0;
+                                    final commentsCount = snapshot.data?.docs.length ?? 0;
                                     return Text('$commentsCount');
                                   },
                                 ),
                                 if (post.name == _username) ...[
                                   const SizedBox(width: 16),
                                   IconButton(
-                                    icon: const Icon(Icons.edit,
-                                        color: Color(0xFF1E3A8A)),
+                                    icon: const Icon(Icons.edit, color: Color(0xFF1E3A8A)),
                                     onPressed: () => _showEditPostDialog(post),
                                   ),
                                   IconButton(
-                                    icon: const Icon(Icons.delete,
-                                        color: Color(0xFF8B0000)),
-                                    onPressed: () => _showDeletePostDialog(
-                                        post.id, post.name),
+                                    icon: const Icon(Icons.delete,color: Color(0xFF8B0000)),
+                                    onPressed: () => _showDeletePostDialog(post.id, post.name),
                                   ),
                                 ],
                               ],
@@ -673,136 +643,77 @@ class _FeedPageState extends State<FeedPage> {
                             // View comments dropdown
                             StreamBuilder<QuerySnapshot>(
                               stream: _firestore
-                                  .collection('posts')
-                                  .doc(post.id)
-                                  .collection('comments')
-                                  .snapshots(),
+                                  .collection('posts').doc(post.id).collection('comments').snapshots(),
                               builder: (context, snapshot) {
                                 if (snapshot.connectionState ==
                                     ConnectionState.waiting) {
                                   return const CircularProgressIndicator();
                                 }
 
-                                final commentsCount =
-                                    snapshot.data?.docs.length ?? 0;
-                                return commentsCount > 0
-                                    ? ExpansionTile(
+                                final commentsCount = snapshot.data?.docs.length ?? 0;
+                                return commentsCount > 0 ? ExpansionTile(
                                         title: const Text('View Comments'),
                                         children: [
                                           ListView.builder(
                                             shrinkWrap: true,
-                                            itemCount: commentsCount,
-                                            itemBuilder: (context, index) {
-                                              final commentData = snapshot
-                                                      .data!.docs[index]
-                                                      .data()
-                                                  as Map<String, dynamic>;
-                                              final commentId =
-                                                  snapshot.data!.docs[index].id;
-                                              final commentText =
-                                                  commentData['comment'] ?? '';
-                                              final userName =
-                                                  commentData['userName'] ??
-                                                      'Unknown';
-                                              final timestamp =
-                                                  commentData['timestamp']
-                                                      as Timestamp?;
-                                              final formattedTime = timestamp !=
-                                                      null
-                                                  ? _formatTimestamp(timestamp)
-                                                  : 'Unknown time';
+                                            itemCount: commentsCount, itemBuilder: (context, index) {
+                                              final commentData = snapshot.data!.docs[index] .data() as Map<String, dynamic>;
+                                              final commentId = snapshot.data!.docs[index].id;
+                                              final commentText = commentData['comment'] ?? '';
+                                              final userName = commentData['userName'] ?? 'Unknown';
+                                              final timestamp = commentData['timestamp'] as Timestamp?;
+                                              final formattedTime = timestamp != null
+                                                  ? _formatTimestamp(timestamp): 'Unknown time';
 
                                               return ListTile(
                                                 contentPadding:
-                                                    const EdgeInsets.symmetric(
-                                                        vertical: 8,
-                                                        horizontal: 16),
-                                                leading: CircleAvatar(
-                                                  radius: 20,
-                                                  backgroundColor:
-                                                      Colors.grey[300],
-                                                  child: const Icon(
-                                                      Icons.person,
-                                                      color: Colors.grey),
+                                                    const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                                                leading: CircleAvatar(radius: 20,backgroundColor:Colors.grey[300],
+                                                  child: const Icon(Icons.person, color: Colors.grey),
                                                 ),
                                                 title: Row(
                                                   children: [
                                                     Flexible(
                                                       child: Text(
-                                                        userName,
-                                                        style: const TextStyle(
-                                                            fontSize: 16,
-                                                            fontWeight:
-                                                                FontWeight
-                                                                    .bold),
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
+                                                        userName,style: const TextStyle(fontSize: 16, fontWeight:FontWeight.bold),
+                                                        overflow: TextOverflow.ellipsis,
                                                       ),
                                                     ),
                                                     const SizedBox(width: 8),
-                                                    Text(
-                                                      formattedTime,
-                                                      style: const TextStyle(
-                                                          fontSize: 12,
-                                                          color: Colors.grey),
+                                                    Text(formattedTime,
+                                                      style: const TextStyle(fontSize: 12, color: Colors.grey),
                                                     ),
                                                   ],
                                                 ),
                                                 subtitle: Text(
-                                                  commentText,
-                                                  softWrap: true,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  maxLines: 3,
+                                                  commentText, softWrap: true, overflow: TextOverflow.ellipsis,maxLines: 3,
                                                 ),
-                                                trailing: _username == userName
-                                                    ? PopupMenuButton<String>(
-                                                        icon: const Icon(
-                                                            Icons.more_vert,
-                                                            size: 20),
+                                                trailing: _username == userName? PopupMenuButton<String>(
+                                                        icon: const Icon(Icons.more_vert,size: 20),
                                                         onSelected: (value) {
                                                           if (value == 'edit') {
-                                                            _showEditCommentDialog(
-                                                                post.id,
-                                                                commentId,
-                                                                commentText);
-                                                          } else if (value ==
-                                                              'delete') {
-                                                            _showDeleteCommentDialog(
-                                                                post.id,
-                                                                commentId,
-                                                                userName);
+                                                            _showEditCommentDialog(post.id,commentId,commentText);
+                                                          } else if (value == 'delete') {
+                                                            _showDeleteCommentDialog(post.id,commentId,userName);
                                                           }
                                                         },
                                                         itemBuilder:
                                                             (context) => [
-                                                          const PopupMenuItem(
-                                                            value: 'edit',
+                                                          const PopupMenuItem(value: 'edit',
                                                             child: Row(
                                                               children: [
                                                                 Icon(Icons.edit,
-                                                                    size: 20,
-                                                                    color: Color(
-                                                                        0xFF1E3A8A)),
-                                                                SizedBox(
-                                                                    width: 8),
-                                                                Text('Edit'),
+                                                                    size: 20, color: Color(0xFF1E3A8A)),
+                                                                SizedBox(width: 8), Text('Edit'),
                                                               ],
                                                             ),
                                                           ),
-                                                          const PopupMenuItem(
-                                                            value: 'delete',
+                                                          const PopupMenuItem(value: 'delete',
                                                             child: Row(
                                                               children: [
-                                                                Icon(
-                                                                    Icons
-                                                                        .delete,
-                                                                    size: 20,
-                                                                    color: Color(
-                                                                        0xFF8B0000)),
-                                                                SizedBox(
-                                                                    width: 8),
-                                                                Text('Delete'),
+                                                                Icon(Icons.delete,
+                                                                    size: 20, color: Color(0xFF8B0000)),
+                                                                SizedBox(width: 8), Text('Delete'),
                                                               ],
                                                             ),
                                                           ),
