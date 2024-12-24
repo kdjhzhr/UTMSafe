@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'report.dart';
+import 'banner.dart';
 
 class PoliceInterface extends StatefulWidget {
   const PoliceInterface({Key? key}) : super(key: key);
@@ -172,19 +173,29 @@ class _PoliceInterfaceState extends State<PoliceInterface> {
     final dateTime = timestamp.toDate();
     return DateFormat('dd/MM/yyyy HH:mm').format(dateTime);
   }
-
+  
   String _getCategoryEmoji(String category) {
     switch (category.toLowerCase()) {
       case 'fire emergency':
         return '🔥';
-      case 'snake encounter':
-        return '🐍';
-      case 'monkey attack':
-        return '🐒';
-      case 'electric shock':
-        return '⚡';
-      case 'minor accident':
-        return '🚗';
+      case 'animal encounter':
+        return '🐾';
+      case 'theft':
+        return '🕵️‍♂️';
+      case 'road closure':
+        return '🚫';
+      case 'power outage':
+        return '🔌';
+      case 'lost item':
+        return '🔍';
+      case 'medical emergency':
+        return '🚑';
+      case 'transportation incident':
+        return '🚌';
+      case 'infrastructure failure':
+        return '⚙️';
+      case 'property damage':
+        return '🏚️';
       default:
         return '⚠️';
     }
@@ -220,15 +231,12 @@ class _PoliceInterfaceState extends State<PoliceInterface> {
                       actions: <Widget>[
                         TextButton(
                           onPressed: () {
-                            Navigator.of(context)
-                                .pop(false); // User cancels logout
+                            Navigator.of(context).pop(false); // User cancels logout
                           },
                           child: const Text('Cancel'),
                         ),
                         TextButton(
-                          onPressed: () {
-                            Navigator.of(context)
-                                .pop(true); // User confirms logout
+                          onPressed: () {Navigator.of(context).pop(true); // User confirms logout
                           },
                           child: const Text('Logout'),
                         ),
@@ -242,10 +250,7 @@ class _PoliceInterfaceState extends State<PoliceInterface> {
                   try {
                     await _auth.signOut();
                     Navigator.pushNamedAndRemoveUntil(
-                        context,
-                        '/',
-                        (route) =>
-                            false); // Navigate to home screen after logout
+                        context, '/', (route) => false); // Navigate to home screen after logout
                   } catch (e) {
                     print("Error during logout: $e");
                   }
@@ -258,208 +263,201 @@ class _PoliceInterfaceState extends State<PoliceInterface> {
         index: _selectedIndex,
         children: [
           // Feed Page
-          StreamBuilder<List<Post>>(
-            stream: _fetchPosts(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return const Center(child: Text("No posts available."));
-              }
+          CustomScrollView(
+            slivers: [
+              const SliverAppBar(
+                floating: false,
+                expandedHeight: 150.0,
+                flexibleSpace: FlexibleSpaceBar(
+                  background: SafetyBanner(), // Your banner widget
+                ),
+              ),
+              StreamBuilder<List<Post>>(
+                stream: _fetchPosts(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const SliverFillRemaining(
+                      child: Center(child: CircularProgressIndicator()),
+                    );
+                  }
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return const SliverFillRemaining(
+                      child: Center(child: Text("No posts available.")),
+                    );
+                  }
 
-              final posts = snapshot.data!;
-              return ListView.builder(
-                itemCount: posts.length,
-                itemBuilder: (context, index) {
-                  final post = posts[index];
-                  return Card(
-                    margin:
-                        const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              CircleAvatar(
-                                radius: 20,
-                                backgroundColor: Colors.grey[300],
-                                child: const Icon(Icons.person,
-                                    color: Colors.grey),
-                              ),
-                              const SizedBox(width: 8),
-                              GestureDetector(
-                                onTap: () => _showUserDetailsDialog(post.name),
-                                child: Text(
-                                  post.name,
-                                  style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold),
+                  final posts = snapshot.data!;
+                  return SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final post = posts[index];
+                        return Card(
+                          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // User details row (username and timestamp)
+                                Row(
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 20,
+                                      backgroundColor: Colors.grey[300],
+                                      child: const Icon(Icons.person, color: Colors.grey),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    GestureDetector(
+                                      onTap: () => _showUserDetailsDialog(post.name),
+                                      child: Text(
+                                        post.name,
+                                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    Text(
+                                      _formatTimestamp(post.timestamp),
+                                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                              const Spacer(),
-                              Text(
-                                _formatTimestamp(post.timestamp),
-                                style: const TextStyle(
-                                    fontSize: 12, color: Colors.grey),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          if (post.category != null)
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 8.0),
-                              child: Row(
-                                children: [
-                                  Text(
-                                    _getCategoryEmoji(post.category!) + ' ',
-                                    style: const TextStyle(fontSize: 18),
-                                  ),
-                                  Text(
-                                    '${post.category}',
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFF8B0000)),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          Text(post.description),
-                          if (post.photoUrl != null)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 8.0),
-                              child: Image.network(post.photoUrl!),
-                            ),
-                          Row(
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.favorite_border,
-                                    color: Colors.red),
-                                onPressed: () => _likePost(post.id, post.likes),
-                              ),
-                              Text(post.likes.toString()),
-                              const SizedBox(width: 16),
-                              Row(
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.comment,
-                                        color: Colors.grey),
-                                    onPressed: () =>
-                                        _showAddCommentDialog(post.id),
-                                  ),
-                                  StreamBuilder<QuerySnapshot>(
-                                    stream: _firestore
-                                        .collection('posts')
-                                        .doc(post.id)
-                                        .collection('comments')
-                                        .snapshots(),
-                                    builder: (context, snapshot) {
-                                      if (snapshot.connectionState ==
-                                          ConnectionState.waiting) {
-                                        return const CircularProgressIndicator();
-                                      }
-                                      final commentsCount =
-                                          snapshot.data?.docs.length ?? 0;
-                                      return Text('$commentsCount');
-                                    },
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          // View comments dropdown
-                          StreamBuilder<QuerySnapshot>(
-                            stream: _firestore
-                                .collection('posts')
-                                .doc(post.id)
-                                .collection('comments')
-                                .snapshots(),
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState ==
-                                  ConnectionState.waiting) {
-                                return const CircularProgressIndicator();
-                              }
-
-                              final commentsCount =
-                                  snapshot.data?.docs.length ?? 0;
-
-                              return commentsCount > 0
-                                  ? ExpansionTile(
-                                      title: const Text('View Comments'),
+                                const SizedBox(height: 8),
+                                if (post.category != null)
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 8.0),
+                                    child: Row(
                                       children: [
-                                        ListView.builder(
-                                          shrinkWrap: true,
-                                          itemCount: commentsCount,
-                                          itemBuilder: (context, index) {
-                                            final commentData = snapshot
-                                                .data!.docs[index]
-                                                .data() as Map<String, dynamic>;
-                                            final commentText =
-                                                commentData['comment'] ?? '';
-                                            final userName =
-                                                commentData['userName'] ??
-                                                    'Unknown';
-                                            final timestamp =
-                                                commentData['timestamp']
-                                                    as Timestamp?;
-                                            final formattedTime = timestamp !=
-                                                    null
-                                                ? _formatTimestamp(timestamp)
-                                                : 'Unknown time';
-
-                                            return ListTile(
-                                              contentPadding:
-                                                  const EdgeInsets.symmetric(
-                                                      vertical: 8,
-                                                      horizontal: 16),
-                                              leading: CircleAvatar(
-                                                radius: 20,
-                                                backgroundColor:
-                                                    Colors.grey[300],
-                                                child: const Icon(Icons.person,
-                                                    color: Colors.grey),
-                                              ),
-                                              title: Row(
-                                                children: [
-                                                  Text(
-                                                    userName,
-                                                    style: const TextStyle(
-                                                        fontSize: 16,
-                                                        fontWeight:
-                                                            FontWeight.bold),
-                                                  ),
-                                                  const SizedBox(width: 8),
-                                                  Text(
-                                                    formattedTime,
-                                                    style: const TextStyle(
-                                                        fontSize: 12,
-                                                        color: Colors.grey),
-                                                  ),
-                                                ],
-                                              ),
-                                              subtitle: Text(commentText),
-                                            );
+                                        Text(
+                                          _getCategoryEmoji(post.category!) + ' ',
+                                          style: const TextStyle(fontSize: 18),
+                                        ),
+                                        Text(
+                                          '${post.category}',
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF8B0000)),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                Text(post.description),
+                                if (post.photoUrl != null)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 8.0),
+                                    child: Image.network(post.photoUrl!),
+                                  ),
+                                Row(
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.favorite_border, color: Colors.red),
+                                      onPressed: () => _likePost(post.id, post.likes),
+                                    ),
+                                    Text(post.likes.toString()),
+                                    const SizedBox(width: 16),
+                                    Row(
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(Icons.comment, color: Colors.grey),
+                                          onPressed: () => _showAddCommentDialog(post.id),
+                                        ),
+                                        StreamBuilder<QuerySnapshot>(
+                                          stream: _firestore
+                                              .collection('posts')
+                                              .doc(post.id)
+                                              .collection('comments')
+                                              .snapshots(),
+                                          builder: (context, snapshot) {
+                                            if (snapshot.connectionState == ConnectionState.waiting) {
+                                              return const CircularProgressIndicator();
+                                            }
+                                            final commentsCount =
+                                                snapshot.data?.docs.length ?? 0;
+                                            return Text('$commentsCount');
                                           },
                                         ),
                                       ],
-                                    )
-                                  : const SizedBox.shrink();
-                            },
+                                    ),
+                                  ],
+                                ),
+                                // View comments dropdown
+                                StreamBuilder<QuerySnapshot>(
+                                  stream: _firestore
+                                      .collection('posts')
+                                      .doc(post.id)
+                                      .collection('comments')
+                                      .snapshots(),
+                                  builder: (context, snapshot) {
+                                    if (snapshot.connectionState == ConnectionState.waiting) {
+                                      return const CircularProgressIndicator();
+                                    }
+
+                                    final commentsCount = snapshot.data?.docs.length ?? 0;
+
+                                    return commentsCount > 0
+                                        ? ExpansionTile(
+                                            title: const Text('View Comments'),
+                                            children: [
+                                              ListView.builder(
+                                                shrinkWrap: true,
+                                                itemCount: commentsCount,
+                                                itemBuilder: (context, index) {
+                                                  final commentData = snapshot.data!.docs[index].data()
+                                                      as Map<String, dynamic>;
+                                                  final commentText = commentData['comment'] ?? '';
+                                                  final userName = commentData['userName'] ?? 'Unknown';
+                                                  final timestamp = commentData['timestamp'] as Timestamp?;
+                                                  final formattedTime = timestamp != null
+                                                      ? _formatTimestamp(timestamp)
+                                                      : 'Unknown time';
+
+                                                  return ListTile(
+                                                    contentPadding: const EdgeInsets.symmetric(
+                                                        vertical: 8, horizontal: 16),
+                                                    leading: CircleAvatar(
+                                                      radius: 20,
+                                                      backgroundColor: Colors.grey[300],
+                                                      child: const Icon(Icons.person, color: Colors.grey),
+                                                    ),
+                                                    title: Row(
+                                                      children: [
+                                                        Text(
+                                                          userName,
+                                                          style: const TextStyle(
+                                                              fontSize: 16, fontWeight: FontWeight.bold),
+                                                        ),
+                                                        const SizedBox(width: 8),
+                                                        Text(
+                                                          formattedTime,
+                                                          style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    subtitle: Text(commentText),
+                                                  );
+                                                },
+                                              ),
+                                            ],
+                                          )
+                                        : const SizedBox.shrink();
+                                  },
+                                ),
+                              ],
+                            ),
                           ),
-                        ],
-                      ),
+                        );
+                      },
+                      childCount: posts.length,
                     ),
                   );
                 },
-              );
-            },
+              ),
+            ],
           ),
           // Report Page
           const Report(),
         ],
       ),
+
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: const Color(0xFFF5E9D4),
         currentIndex: _selectedIndex,

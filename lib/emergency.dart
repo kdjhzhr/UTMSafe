@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'studentfeedpage.dart'; // Import the FeedPage (or your Feed page)
 import 'safety.dart'; // Import the safety.dart file
+import 'quiz.dart'; // Import the quiz.dart file (the page where your quiz is implemented)
 
 class SosPage extends StatefulWidget {
   const SosPage({super.key});
@@ -106,6 +107,34 @@ class _SosPageState extends State<SosPage> {
             ),
           ),
           const Divider(thickness: 2, color: Color(0xFF8B0000)),
+
+          // Quiz Button
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Center(
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => SafetyQuizPage(), // Navigate to the quiz page
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF8B0000),
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12), // Adjusted padding for button
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+                child: const Text(
+                  'Quiz', // Text updated to 'Quiz'
+                  style: TextStyle(fontSize: 20, color: Colors.white),
+                ),
+              ),
+            ),
+          ),
 
           // Bottom redirect link
           Padding(
