@@ -312,81 +312,90 @@ Widget _buildBarChartIncidentPost(List<int> data, DateTime now) {
 }
 
   Widget _buildPieChartIncidentPost(List<int> data, DateTime now) {
-    List<Color> pieChartColors = [
-      Colors.blue, // Monday
-      Colors.green, // Tuesday
-      Colors.orange, // Wednesday
-      Colors.red, // Thursday
-      Colors.purple, // Friday
-      Colors.teal, // Saturday
-      Colors.yellow, // Sunday
-    ];
+  List<Color> pieChartColors = [
+    Colors.blue,
+    Colors.green,
+    Colors.orange,
+    Colors.red,
+    Colors.purple,
+    Colors.teal,
+    Colors.yellow,
+  ];
 
-    List<String> dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  List<String> dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-    List<PieChartSectionData> pieSections = [];
+  List<PieChartSectionData> pieSections = [];
 
-    // Create pie chart sections
-    for (int i = 0; i < data.length; i++) {
-      if (data[i] > 0) {
-        pieSections.add(PieChartSectionData(
-          color: pieChartColors[i], // Assign each day a different color
-          value: data[i].toDouble(),
-          title: "${data[i]}", // Display count in the chart section
-          radius: 50,
-          titleStyle: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ));
-      }
+  // Create pie chart sections
+  for (int i = 0; i < data.length; i++) {
+    if (data[i] > 0) {
+      pieSections.add(PieChartSectionData(
+        color: pieChartColors[i],
+        value: data[i].toDouble(),
+        title: "${data[i]}",
+        radius: 80,
+        titleStyle: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      ));
     }
+  }
 
-    return data.every((value) => value == 0)
-        ? const Center(child: Text("No data to display"))
-        : Column(
-            children: [
-              Expanded(
-                child: PieChart(
-                  PieChartData(
-                    sections: pieSections,
-                    borderData: FlBorderData(show: false),
-                    sectionsSpace: 2, // Space between sections
+  return data.every((value) => value == 0)
+      ? const Center(child: Text("No data to display"))
+      : Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                SizedBox(
+                  height: 300,
+                  child: PieChart(
+                    PieChartData(
+                      sections: pieSections,
+                      sectionsSpace: 2,
+                      centerSpaceRadius: 50,
+                      borderData: FlBorderData(show: false),
+                    ),
                   ),
                 ),
-              ),
-              // Indicator (Legend) for each day
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 16,
+                  runSpacing: 8,
+                  alignment: WrapAlignment.center,
                   children: List.generate(data.length, (index) {
                     if (data[index] > 0) {
                       return Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Container(
-                            width: 20,
-                            height: 20,
-                            color: pieChartColors[index], // Day-specific color
+                            width: 16,
+                            height: 16,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: pieChartColors[index],
+                            ),
                           ),
                           const SizedBox(width: 8),
                           Text(
                             dayLabels[index],
-                            style: const TextStyle(fontSize: 16),
+                            style: const TextStyle(fontSize: 14),
                           ),
-                          const SizedBox(width: 16),
                         ],
                       );
                     } else {
-                      return const SizedBox(); // Skip empty days
+                      return const SizedBox.shrink();
                     }
                   }),
                 ),
-              ),
-            ],
-          );
-  }
+              ],
+            ),
+          ),
+        );
+}
 
   Widget _buildBarChartIncidentCategory(List<Map<String, dynamic>> data) {
   // Define the category labels (X-axis)
@@ -400,7 +409,7 @@ Widget _buildBarChartIncidentPost(List<int> data, DateTime now) {
       barRods: [
         BarChartRodData(
           toY: entry.value['count'].toDouble(),
-          color: Colors.blue, // You can customize the color
+          color: Colors.red, // You can customize the color
           width: 20,
           borderRadius: BorderRadius.circular(4),
         ),
@@ -476,14 +485,13 @@ Widget _buildBarChartIncidentPost(List<int> data, DateTime now) {
 Widget _buildPieChartIncidentCategory(List<Map<String, dynamic>> data) {
   List<Color> pieChartColors = Colors.primaries;
 
-  // Generate PieChartSections
   List<PieChartSectionData> pieSections = data.asMap().entries.map((entry) {
     final index = entry.key;
     final value = entry.value;
     final count = value['count'] as int;
 
     return PieChartSectionData(
-      color: value['color'] ?? pieChartColors[index % pieChartColors.length],
+      color: pieChartColors[index % pieChartColors.length],
       value: count.toDouble(),
       title: count.toString(),
       radius: 80,
@@ -494,39 +502,6 @@ Widget _buildPieChartIncidentCategory(List<Map<String, dynamic>> data) {
       ),
     );
   }).toList();
-
-  // Build Legend
-  List<Widget> buildLegend() {
-    return data.asMap().entries.map((entry) {
-      final index = entry.key;
-      final value = entry.value;
-      final category = value['category'] as String;
-      final count = value['count'] as int;
-      final color = value['color'] ?? pieChartColors[index % pieChartColors.length];
-
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4.0),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 16,
-              height: 16,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: color,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              '$category: $count',
-              style: const TextStyle(fontSize: 14),
-            ),
-          ],
-        ),
-      );
-    }).toList();
-  }
 
   return Padding(
     padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
@@ -545,14 +520,41 @@ Widget _buildPieChartIncidentCategory(List<Map<String, dynamic>> data) {
             ),
           ),
           const SizedBox(height: 16),
-          Column(
-            children: buildLegend(),
+          Wrap(
+            spacing: 16,
+            runSpacing: 8,
+            alignment: WrapAlignment.center,
+            children: data.asMap().entries.map((entry) {
+              final index = entry.key;
+              final value = entry.value;
+              final category = value['category'] as String;
+
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 16,
+                    height: 16,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: pieChartColors[index % pieChartColors.length],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    category,
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                ],
+              );
+            }).toList(),
           ),
         ],
       ),
     ),
   );
 }
+
   String _getDayOfWeek(DateTime date) {
     return date.weekday == DateTime.monday
         ? 'Mon'
