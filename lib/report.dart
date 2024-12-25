@@ -13,6 +13,7 @@ class _ReportState extends State<Report> {
   String mainDropdownValue = 'Incident Post';
   String timeFilterValue = 'Today';
   String chartTypeValue = 'Bar Chart';
+   String _selectedCategory = 'Category';  
 
   Future<Map<String, dynamic>> _fetchMostCommonCategoryWithCount() async {  
   DateTime now = DateTime.now();  
@@ -101,6 +102,35 @@ class _ReportState extends State<Report> {
   }  
 }
 
+// Method to fetch category count for the last 7 days  
+  Stream<int> _fetchCategoryCount(String category) async* {  
+    DateTime now = DateTime.now();  
+    DateTime sevenDaysAgo = now.subtract(const Duration(days: 7));  
+
+    try {  
+      // If 'Category' is selected, return total count for the week  
+      if (category == 'Category') {  
+        yield* FirebaseFirestore.instance  
+            .collection('posts')  
+            .where('timestamp', isGreaterThanOrEqualTo: sevenDaysAgo)  
+            .snapshots()  
+            .map((snapshot) => snapshot.docs.length);  
+        return;  
+      }  
+
+      // For specific category, filter by category for the week  
+      yield* FirebaseFirestore.instance  
+          .collection('posts')  
+          .where('timestamp', isGreaterThanOrEqualTo: sevenDaysAgo)  
+          .where('category', isEqualTo: category)  
+          .snapshots()  
+          .map((snapshot) => snapshot.docs.length);  
+    } catch (e) {  
+      print('Error fetching category count: $e');  
+      yield 0;  
+    }  
+  } 
+
   Widget _buildChart() {
     if (mainDropdownValue == 'Incident Post') {
       return StreamBuilder<List<int>>(
@@ -128,40 +158,137 @@ class _ReportState extends State<Report> {
   }
 
   @override  
-Widget build(BuildContext context) {  
-  return Scaffold(  
-    appBar: AppBar(  
-      automaticallyImplyLeading: false,  
-    ),  
-    body: Padding(  
-      padding: const EdgeInsets.all(16.0),  
-      child: Column(  
-        children: [  
-          FutureBuilder<Map<String, dynamic>>(  
-            future: _fetchMostCommonCategoryWithCount(),  
-            builder: (context, snapshot) {  
-              if (snapshot.connectionState == ConnectionState.waiting) {  
-                return const Center(child: CircularProgressIndicator());  
-              }  
-              
-              if (snapshot.hasError) {  
-                return Container(  
-                  color: Colors.red.shade100,  
-                  padding: const EdgeInsets.all(12.0),  
-                  child: Text(  
-                    'Error: ${snapshot.error}',  
-                    style: const TextStyle(color: Colors.red),  
+  Widget build(BuildContext context) {  
+    return Scaffold(  
+      appBar: AppBar(  
+        automaticallyImplyLeading: false,  
+      ),  
+      body: Padding(  
+        padding: const EdgeInsets.all(16.0),  
+        child: Column(  
+          children: [  
+            // Row to separate alert banner and category filter  
+            Row(  
+              children: [  
+                // Alert Banner (Expanded to take most of the space)  
+                Expanded(  
+                  child: FutureBuilder<Map<String, dynamic>>(  
+                    future: _fetchMostCommonCategoryWithCount(),  
+                    builder: (context, snapshot) {  
+                      if (snapshot.connectionState == ConnectionState.waiting) {  
+                        return const Center(child: CircularProgressIndicator());  
+                      }  
+                      
+                      if (snapshot.hasError) {  
+                        return Container(  
+                          color: Colors.red.shade100,  
+                          padding: const EdgeInsets.all(12.0),  
+                          child: Text(  
+                            'Error: ${snapshot.error}',  
+                            style: const TextStyle(color: Colors.red),  
+                          ),  
+                        );  
+                      }  
+                      
+                      return _buildAlertBanner(  
+                        snapshot.data!['category'],  
+                        snapshot.data!['count']  
+                      );  
+                    },  
                   ),  
-                );  
-              }  
-              
-              return _buildAlertBanner(  
-                snapshot.data!['category'],  
-                snapshot.data!['count']  
-              );  
-            },  
-          ),  
-          const SizedBox(height: 16),  
+                ),  
+
+                // Inside the build method, modify the category filter section  
+Padding(  
+  padding: const EdgeInsets.only(left: 16.0),  
+  child: Row(  
+    mainAxisSize: MainAxisSize.min,  
+    crossAxisAlignment: CrossAxisAlignment.center,  
+    children: [  
+      // Smaller Category Filter Dropdown  
+      DropdownButton<String>(  
+        value: _selectedCategory,  
+        hint: Text('Category', style: TextStyle(fontSize: 10)),  
+        iconSize: 16, // Smaller dropdown icon  
+        style: TextStyle(fontSize: 10, color: Colors.black), // Smaller text  
+        onChanged: (newValue) {  
+          setState(() {  
+            _selectedCategory = newValue!;  
+          });  
+        },  
+        items: <String>[  
+          'Category',  
+          'Animal Encounter',  
+          'Theft',  
+          'Fire Emergency',  
+          'Road Closure',  
+          'Power Outage',  
+          'Lost Item',  
+          'Medical Emergency',  
+          'Transportation Incident',  
+          'Infrastructure Failure',  
+          'Property Damage'  
+        ].map<DropdownMenuItem<String>>((String value) {  
+          return DropdownMenuItem<String>(  
+            value: value,  
+            child: Text(  
+              value,  
+              style: TextStyle(fontSize: 10),  
+              overflow: TextOverflow.ellipsis,  
+            ),  
+          );  
+        }).toList(),  
+      ),  
+
+      // Larger Counter  
+      StreamBuilder<int>(  
+        stream: _fetchCategoryCount(_selectedCategory),  
+        builder: (context, snapshot) {  
+          if (snapshot.connectionState == ConnectionState.waiting) {  
+            return const SizedBox(  
+              width: 20,  
+              height: 20,  
+              child: CircularProgressIndicator(  
+                strokeWidth: 2,  
+              ),  
+            );  
+          }  
+          
+          if (snapshot.hasError) {  
+            return Text(  
+              'Error',  
+              style: TextStyle(color: Colors.red.shade700, fontSize: 12),  
+            );  
+          }  
+          
+          final categoryCount = snapshot.data ?? 0;  
+          return Container(  
+            margin: const EdgeInsets.only(left: 8),  
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),  
+            decoration: BoxDecoration(  
+              color: categoryCount > 0 ? Colors.red.shade100 : Colors.grey.shade200,  
+              border: Border.all(  
+                color: categoryCount > 0 ? Colors.red : Colors.grey,  
+                width: 1,  
+              ),  
+              borderRadius: BorderRadius.circular(12), // More rounded  
+            ),  
+            child: Text(  
+              '$categoryCount',  
+              style: TextStyle(  
+                fontSize: 16, // Larger font size  
+                fontWeight: FontWeight.bold,  
+                color: categoryCount > 0 ? Colors.red.shade800 : Colors.grey.shade700,  
+              ),  
+            ),  
+          );  
+        },  
+      ),  
+    ],  
+  ),  
+)
+              ],  
+            ),  
           _buildDropdowns(),  
           const SizedBox(height: 16),  
           Expanded(child: _buildChart()),  
@@ -201,51 +328,50 @@ Widget build(BuildContext context) {
   }
 
   Widget _buildAlertBanner(String category, int count) {  
-  // Determine the color and icon based on the category or count  
-  Color bannerColor = count > 0 ? Colors.blue.shade100 : Colors.grey.shade200;  
-  IconData icon = count > 0 ? Icons.warning_outlined : Icons.info_outline;  
-  Color iconColor = count > 0 ? Colors.yellow : Colors.grey;  
+    Color bannerColor = count > 0 ? Colors.blue.shade100 : Colors.grey.shade200;  
+    IconData icon = count > 0 ? Icons.warning_outlined : Icons.info_outline;  
+    Color iconColor = count > 0 ? Colors.yellow : Colors.grey;  
 
-  return Container(  
-    width: double.infinity,  
-    padding: const EdgeInsets.all(12.0),  
-    decoration: BoxDecoration(  
-      color: bannerColor,  
-      borderRadius: BorderRadius.circular(8.0),  
-    ),  
-    child: Row(  
-      children: [  
-        Icon(icon, color: iconColor),  
-        const SizedBox(width: 12),  
-        Expanded(  
-          child: RichText(  
-            text: TextSpan(  
-              style: const TextStyle(color: Colors.black87),  
-              children: [  
-                const TextSpan(  
-                  text: 'Most Common Incident This Week: ',  
-                  style: TextStyle(fontWeight: FontWeight.bold),  
-                ),  
-                TextSpan(  
-                  text: category,  
-                  style: TextStyle(  
-                    fontWeight: FontWeight.bold,  
-                    color: count > 0 ? Colors.red : Colors.grey,  
+    return Container(  
+      width: double.infinity,  
+      padding: const EdgeInsets.all(12.0),  
+      decoration: BoxDecoration(  
+        color: bannerColor,  
+        borderRadius: BorderRadius.circular(8.0),  
+      ),  
+      child: Row(  
+        children: [  
+          Icon(icon, color: iconColor),  
+          const SizedBox(width: 12),  
+          Expanded(  
+            child: RichText(  
+              text: TextSpan(  
+                style: const TextStyle(color: Colors.black87),  
+                children: [  
+                  const TextSpan(  
+                    text: 'Most Common Incident This Week: ',  
+                    style: TextStyle(fontWeight: FontWeight.bold),  
                   ),  
-                ),  
-                if (count > 0)  
                   TextSpan(  
-                    text: ' ($count incidents)',  
-                    style: const TextStyle(color: Colors.grey),  
+                    text: category,  
+                    style: TextStyle(  
+                      fontWeight: FontWeight.bold,  
+                      color: count > 0 ? Colors.red : Colors.grey,  
+                    ),  
                   ),  
-              ],  
+                  if (count > 0)  
+                    TextSpan(  
+                      text: ' ($count incidents)',  
+                      style: const TextStyle(color: Colors.grey),  
+                    ),  
+                ],  
+              ),  
             ),  
           ),  
-        ),  
-      ],  
-    ),  
-  );  
-}  
+        ],  
+      ),  
+    );  
+  }  
 
 Widget _buildBarChartIncidentPost(List<int> data, DateTime now) {  
   // Check if all data points are zero  
