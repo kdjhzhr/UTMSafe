@@ -70,7 +70,7 @@ class _WelcomePageState extends State<WelcomePage> {
                 duration:
                     const Duration(milliseconds: 500), // Fade out duration
                 child: const Text(
-                  'Stay Safe and Stay Informed',
+                  'Your Safety is Our Priority',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
