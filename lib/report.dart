@@ -14,84 +14,92 @@ class _ReportState extends State<Report> {
   String timeFilterValue = 'Day';
   String chartTypeValue = 'Bar Chart';
 
-  Future<Map<String, dynamic>> _fetchMostCommonCategoryWithCount() async {
-    DateTime now = DateTime.now();
-    DateTime startTime = timeFilterValue == 'Day' 
-      ? DateTime(now.year, now.month, now.day)
-      : now.subtract(const Duration(days: 7));
+  Future<Map<String, dynamic>> _fetchMostCommonCategoryWithCount() async {  
+  DateTime now = DateTime.now();  
+  // Always use the last 7 days, regardless of timeFilterValue  
+  DateTime startTime = now.subtract(const Duration(days: 7));  
 
-    QuerySnapshot snapshot = await FirebaseFirestore.instance
-      .collection('posts')
-      .where('timestamp', isGreaterThanOrEqualTo: startTime)
-      .get();
+  QuerySnapshot snapshot = await FirebaseFirestore.instance  
+    .collection('posts')  
+    .where('timestamp', isGreaterThanOrEqualTo: startTime)  
+    .get();  
 
-    Map<String, int> categoryCounts = {};
+  Map<String, int> categoryCounts = {};  
+  
+  for (var doc in snapshot.docs) {  
+    final category = doc['category'] as String? ?? 'Uncategorized';  
+    categoryCounts[category] = (categoryCounts[category] ?? 0) + 1;  
+  }  
+
+  if (categoryCounts.isEmpty) {  
+    return {'category': 'No incidents', 'count': 0};  
+  }  
+
+  String mostCommonCategory = categoryCounts.entries  
+    .reduce((a, b) => a.value > b.value ? a : b)  
+    .key;  
+
+  return {  
+    'category': mostCommonCategory,  
+    'count': categoryCounts[mostCommonCategory]!  
+  };  
+}  
+
+  Stream<List<int>> _fetchIncidentPostData() async* {  
+  DateTime now = DateTime.now();  
+  DateTime startTime = timeFilterValue == 'Day'   
+    ? DateTime(now.year, now.month, now.day)  
+    : now.subtract(const Duration(days: 7));  
+
+  await for (var snapshot in FirebaseFirestore.instance  
+      .collection('posts')  
+      .where('timestamp', isGreaterThanOrEqualTo: startTime)  
+      .snapshots()) {  
     
-    for (var doc in snapshot.docs) {
-      final category = doc['category'] as String? ?? 'Uncategorized';
-      categoryCounts[category] = (categoryCounts[category] ?? 0) + 1;
-    }
+    final countsPerDay = List.generate(7, (_) => 0);  
 
-    if (categoryCounts.isEmpty) {
-      return {'category': 'No Data', 'count': 0};
-    }
+    for (var doc in snapshot.docs) {  
+      if (doc['timestamp'] != null) {  
+        DateTime timestamp = (doc['timestamp'] as Timestamp).toDate();  
+        int dayOfWeek = timestamp.weekday - 1;  
+        if (dayOfWeek < 0) dayOfWeek = 6;  
+        countsPerDay[dayOfWeek] += 1;  
+      }  
+    }  
+    
+    yield countsPerDay;  
+  }  
+}
 
-    String mostCommonCategory = categoryCounts.entries
-      .reduce((a, b) => a.value > b.value ? a : b)
-      .key;
+  Stream<List<Map<String, dynamic>>> _fetchCategoryCounts() async* {  
+  DateTime now = DateTime.now();  
+  DateTime startTime = timeFilterValue == 'Day'   
+    ? DateTime(now.year, now.month, now.day)  
+    : now.subtract(const Duration(days: 7));  
 
-    return {
-      'category': mostCommonCategory,
-      'count': categoryCounts[mostCommonCategory]!
-    };
-  }
+  await for (var snapshot in FirebaseFirestore.instance  
+      .collection('posts')  
+      .where('timestamp', isGreaterThanOrEqualTo: startTime)  
+      .snapshots()) {  
+    
+    final categoryCounts = <String, int>{};  
+    
+    for (var doc in snapshot.docs) {  
+      final category = doc['category'] as String? ?? 'Uncategorized';  
+      categoryCounts[category] = (categoryCounts[category] ?? 0) + 1;  
+    }  
 
-  Stream<List<int>> _fetchIncidentPostData() async* {
-    DateTime now = DateTime.now();
-    DateTime startTime = timeFilterValue == 'Day' 
-      ? DateTime(now.year, now.month, now.day)
-      : now.subtract(const Duration(days: 7));
+    // Ensure we always return a list, even if empty  
+    final result = categoryCounts.entries  
+        .map((e) => {'category': e.key, 'count': e.value})  
+        .toList();  
 
-    await for (var snapshot in FirebaseFirestore.instance
-        .collection('posts')
-        .where('timestamp', isGreaterThanOrEqualTo: startTime)
-        .snapshots()) {
-      final countsPerDay = List.generate(7, (_) => 0);
-
-      for (var doc in snapshot.docs) {
-        if (doc['timestamp'] != null) {
-          DateTime timestamp = (doc['timestamp'] as Timestamp).toDate();
-          int dayOfWeek = timestamp.weekday - 1;
-          if (dayOfWeek < 0) dayOfWeek = 6;
-          countsPerDay[dayOfWeek] += 1;
-        }
-      }
-      yield countsPerDay;
-    }
-  }
-
-  Stream<List<Map<String, dynamic>>> _fetchCategoryCounts() async* {
-    DateTime now = DateTime.now();
-    DateTime startTime = timeFilterValue == 'Day' 
-      ? DateTime(now.year, now.month, now.day)
-      : now.subtract(const Duration(days: 7));
-
-    await for (var snapshot in FirebaseFirestore.instance
-        .collection('posts')
-        .where('timestamp', isGreaterThanOrEqualTo: startTime)
-        .snapshots()) {
-      final categoryCounts = <String, int>{};
-      
-      for (var doc in snapshot.docs) {
-        final category = doc['category'] as String? ?? 'Uncategorized';
-        categoryCounts[category] = (categoryCounts[category] ?? 0) + 1;
-      }
-
-      yield categoryCounts.entries
-          .map((e) => {'category': e.key, 'count': e.value})
-          .toList();
-    }
-  }
+    // If no data, yield a default "No Data" entry  
+    yield result.isNotEmpty   
+      ? result   
+      : [{'category': 'No Data', 'count': 0}];  
+  }  
+}
 
   Widget _buildChart() {
     if (mainDropdownValue == 'Incident Post') {
@@ -119,36 +127,49 @@ class _ReportState extends State<Report> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            FutureBuilder<Map<String, dynamic>>(
-              future: _fetchMostCommonCategoryWithCount(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) return const CircularProgressIndicator();
-                
-                return _buildAlertBanner(
-                  snapshot.data!['category'],
-                  snapshot.data!['count']
-                );
-              },
-            ),
-            const SizedBox(height: 16),
-            _buildDropdowns(),
-            const SizedBox(height: 16),
-            Expanded(child: _buildChart()),
-          ],
-        ),
-      ),
-    );
-  }
+  @override  
+Widget build(BuildContext context) {  
+  return Scaffold(  
+    appBar: AppBar(  
+      automaticallyImplyLeading: false,  
+    ),  
+    body: Padding(  
+      padding: const EdgeInsets.all(16.0),  
+      child: Column(  
+        children: [  
+          FutureBuilder<Map<String, dynamic>>(  
+            future: _fetchMostCommonCategoryWithCount(),  
+            builder: (context, snapshot) {  
+              if (snapshot.connectionState == ConnectionState.waiting) {  
+                return const Center(child: CircularProgressIndicator());  
+              }  
+              
+              if (snapshot.hasError) {  
+                return Container(  
+                  color: Colors.red.shade100,  
+                  padding: const EdgeInsets.all(12.0),  
+                  child: Text(  
+                    'Error: ${snapshot.error}',  
+                    style: const TextStyle(color: Colors.red),  
+                  ),  
+                );  
+              }  
+              
+              return _buildAlertBanner(  
+                snapshot.data!['category'],  
+                snapshot.data!['count']  
+              );  
+            },  
+          ),  
+          const SizedBox(height: 16),  
+          _buildDropdowns(),  
+          const SizedBox(height: 16),  
+          Expanded(child: _buildChart()),  
+        ],  
+      ),  
+    ),  
+  );  
+}  
 
   Widget _buildDropdowns() {
     return Row(
@@ -179,136 +200,177 @@ class _ReportState extends State<Report> {
     );
   }
 
-  Widget _buildAlertBanner(String category, int count) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12.0),
-      decoration: BoxDecoration(
-        color: Colors.red,
-        borderRadius: BorderRadius.circular(8.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 6.0,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.warning, color: Colors.yellow, size: 20.0),
-              const SizedBox(width: 8),
-              const Text(
-                'Most Common Incident:',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '$category (Count: $count)',
-            style: const TextStyle(fontSize: 14, color: Colors.black),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _buildAlertBanner(String category, int count) {  
+  // Determine the color and icon based on the category or count  
+  Color bannerColor = count > 0 ? Colors.blue.shade100 : Colors.grey.shade200;  
+  IconData icon = count > 0 ? Icons.warning_outlined : Icons.info_outline;  
+  Color iconColor = count > 0 ? Colors.yellow : Colors.grey;  
 
-Widget _buildBarChartIncidentPost(List<int> data, DateTime now) {
-  // Define days of the week
-  List<String> xLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  return Container(  
+    width: double.infinity,  
+    padding: const EdgeInsets.all(12.0),  
+    decoration: BoxDecoration(  
+      color: bannerColor,  
+      borderRadius: BorderRadius.circular(8.0),  
+    ),  
+    child: Row(  
+      children: [  
+        Icon(icon, color: iconColor),  
+        const SizedBox(width: 12),  
+        Expanded(  
+          child: RichText(  
+            text: TextSpan(  
+              style: const TextStyle(color: Colors.black87),  
+              children: [  
+                const TextSpan(  
+                  text: 'Most Common Incident This Week: ',  
+                  style: TextStyle(fontWeight: FontWeight.bold),  
+                ),  
+                TextSpan(  
+                  text: category,  
+                  style: TextStyle(  
+                    fontWeight: FontWeight.bold,  
+                    color: count > 0 ? Colors.red : Colors.grey,  
+                  ),  
+                ),  
+                if (count > 0)  
+                  TextSpan(  
+                    text: ' ($count incidents)',  
+                    style: const TextStyle(color: Colors.grey),  
+                  ),  
+              ],  
+            ),  
+          ),  
+        ),  
+      ],  
+    ),  
+  );  
+}  
 
-  // Find the maximum value in the data for dynamic scaling
-  int maxValue = data.reduce((a, b) => a > b ? a : b);
-  int yMax = (maxValue > 0) ? maxValue + 1 : 1; // Ensure a non-zero Y-axis
+Widget _buildBarChartIncidentPost(List<int> data, DateTime now) {  
+  // Check if all data points are zero  
+  bool hasNoData = data.every((count) => count == 0);  
 
-  // Map the data to BarChartGroupData
-  List<BarChartGroupData> barGroups = data.asMap().entries.map((entry) {
-    return BarChartGroupData(
-      x: entry.key,
-      barRods: [
-        BarChartRodData(
-          toY: entry.value.toDouble(),
-          color: Colors.red,
-          width: 15,
-          borderRadius: BorderRadius.circular(4),
-        ),
-      ],
-    );
-  }).toList();
+  // If no data, return the "No incident data available" message  
+  if (hasNoData) {  
+    return const Center(  
+      child: Text(  
+        'No incident data available',  
+        style: TextStyle(fontSize: 16, color: Colors.grey),  
+      ),  
+    );  
+  }  
 
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-    child: BarChart(
-      BarChartData(
-        borderData: FlBorderData(
-          show: true,
-          border: Border.all(color: Colors.black, width: 1),
-        ),
-        gridData: const FlGridData(
-          show: true,
-          horizontalInterval: 1,
-          verticalInterval: 1,
-        ),
-        titlesData: FlTitlesData(
-          leftTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              getTitlesWidget: (value, meta) {
-                return Text(
-                  value.toInt().toString(),
-                  style: const TextStyle(fontSize: 12),
-                );
-              },
-            ),
-            axisNameWidget: const Text(
-              'Incident Post Count',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-            ),
-            axisNameSize: 16,
-          ),
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              interval: 1, // Ensure titles appear at regular intervals
-              getTitlesWidget: (value, meta) {
-                int index = value.round(); // Round value to an integer
-                if (index >= 0 && index < xLabels.length) {
-                  return Text(
-                    xLabels[index],
-                    style: const TextStyle(fontSize: 12),
-                  );
-                }
-                return const Text(
-                    ''); // Return empty for out-of-bounds indices
-              },
-            ),
-            axisNameWidget: const Text(
-              'Days',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-            ),
-            axisNameSize: 16,
-          ),
-          topTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false), // Hide top titles
-          ),
-          rightTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false), // Hide right titles
-          ),
-        ),
-        maxY: yMax.toDouble(), // Dynamically adjust the Y-axis max value
-        barGroups: barGroups,
-      ),
-    ),
-  );
+  // Define days of the week  
+  List<String> xLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];  
+
+  // Calculate total posts  
+  int totalPosts = data.reduce((a, b) => a + b);  
+
+  // Find the maximum value in the data for dynamic scaling  
+  int maxValue = data.reduce((a, b) => a > b ? a : b);  
+  int yMax = (maxValue > 0) ? maxValue + 1 : 1; // Ensure a non-zero Y-axis  
+
+  // Map the data to BarChartGroupData  
+  List<BarChartGroupData> barGroups = data.asMap().entries.map((entry) {  
+    return BarChartGroupData(  
+      x: entry.key,  
+      barRods: [  
+        BarChartRodData(  
+          toY: entry.value.toDouble(),  
+          color: Colors.red,  
+          width: 15,  
+          borderRadius: BorderRadius.circular(4),  
+        ),  
+      ],  
+    );  
+  }).toList();  
+
+  return Padding(  
+    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),  
+    child: Stack(  
+      children: [  
+        BarChart(  
+          BarChartData(  
+            borderData: FlBorderData(  
+              show: true,  
+              border: Border.all(color: Colors.black, width: 1),  
+            ),  
+            gridData: const FlGridData(  
+              show: true,  
+              horizontalInterval: 1,  
+              verticalInterval: 1,  
+            ),  
+            titlesData: FlTitlesData(  
+              leftTitles: AxisTitles(  
+                sideTitles: SideTitles(  
+                  showTitles: true,  
+                  getTitlesWidget: (value, meta) {  
+                    return Text(  
+                      value.toInt().toString(),  
+                      style: const TextStyle(fontSize: 12),  
+                    );  
+                  },  
+                ),  
+                axisNameWidget: const Text(  
+                  'Incident Post Count',  
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),  
+                ),  
+                axisNameSize: 16,  
+              ),  
+              bottomTitles: AxisTitles(  
+                sideTitles: SideTitles(  
+                  showTitles: true,  
+                  interval: 1, // Ensure titles appear at regular intervals  
+                  getTitlesWidget: (value, meta) {  
+                    int index = value.round(); // Round value to an integer  
+                    if (index >= 0 && index < xLabels.length) {  
+                      return Text(  
+                        xLabels[index],  
+                        style: const TextStyle(fontSize: 12),  
+                      );  
+                    }  
+                    return const Text(''); // Return empty for out-of-bounds indices  
+                  },  
+                ),  
+                axisNameWidget: const Text(  
+                  'Days',  
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),  
+                ),  
+                axisNameSize: 16,  
+              ),  
+              topTitles: const AxisTitles(  
+                sideTitles: SideTitles(showTitles: false), // Hide top titles  
+              ),  
+              rightTitles: const AxisTitles(  
+                sideTitles: SideTitles(showTitles: false), // Hide right titles  
+              ),  
+            ),  
+            maxY: yMax.toDouble(), // Dynamically adjust the Y-axis max value  
+            barGroups: barGroups,  
+          ),  
+        ),  
+        Positioned(  
+          top: 0,  
+          right: 0,  
+          child: Container(  
+            padding: const EdgeInsets.all(8.0),  
+            decoration: BoxDecoration(  
+              color: Colors.black.withOpacity(0.1),  
+              borderRadius: BorderRadius.circular(8.0),  
+            ),  
+            child: Text(  
+              'Total = $totalPosts',  
+              style: const TextStyle(  
+                fontSize: 14,  
+                fontWeight: FontWeight.bold,  
+              ),  
+            ),  
+          ),  
+        ),  
+      ],  
+    ),  
+  );  
 }
 
   Widget _buildPieChartIncidentPost(List<int> data, DateTime now) {
@@ -397,164 +459,219 @@ Widget _buildBarChartIncidentPost(List<int> data, DateTime now) {
         );
 }
 
-  Widget _buildBarChartIncidentCategory(List<Map<String, dynamic>> data) {
-  // Define the category labels (X-axis)
-  List<String> categories = data.map((e) => e['category'] as String).toList();
-  List<int> counts = data.map((e) => e['count'] as int).toList();
+  Widget _buildBarChartIncidentCategory(List<Map<String, dynamic>> data) {  
+  // Handle no data scenario  
+  if (data.isEmpty || (data.length == 1 && data[0]['count'] == 0)) {  
+    return const Center(  
+      child: Text(  
+        'No incident data available',  
+        style: TextStyle(fontSize: 16, color: Colors.grey),  
+      ),  
+    );  
+  }  
 
-  // Map the data to BarChartGroupData
-  List<BarChartGroupData> barGroups = data.asMap().entries.map((entry) {
-    return BarChartGroupData(
-      x: entry.key,
-      barRods: [
-        BarChartRodData(
-          toY: entry.value['count'].toDouble(),
-          color: Colors.red, // You can customize the color
-          width: 20,
-          borderRadius: BorderRadius.circular(4),
-        ),
-      ],
-    );
-  }).toList();
+  // Define the category labels (X-axis)  
+  List<String> categories = data.map((e) => e['category'] as String).toList();  
+  List<int> counts = data.map((e) => e['count'] as int).toList();  
 
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-    child: BarChart(
-      BarChartData(
-        borderData: FlBorderData(
-          show: true,
-          border: Border.all(color: Colors.black, width: 1),
-        ),
-        gridData: const FlGridData(
-          show: true,
-          horizontalInterval: 1,
-          verticalInterval: 1,
-        ),
-        titlesData: FlTitlesData(
-          leftTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              getTitlesWidget: (value, meta) {
-                return Text(
-                  value.toInt().toString(),
-                  style: const TextStyle(fontSize: 12),
-                );
-              },
-            ),
-            axisNameWidget: const Text(
-              'Incident Count',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-            ),
-            axisNameSize: 16,
-          ),
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              interval: 1, // Ensure titles appear at regular intervals
-              getTitlesWidget: (value, meta) {
-                int index = value.round(); // Round value to an integer
-                if (index >= 0 && index < categories.length) {
-                  return Text(
-                    categories[index],
-                    style: const TextStyle(fontSize: 12),
-                  );
-                }
-                return const Text(''); // Return empty for out-of-bounds indices
-              },
-            ),
-            axisNameWidget: const Text(
-              'Category',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-            ),
-            axisNameSize: 16,
-          ),
-          topTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false), // Hide top titles
-          ),
-          rightTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false), // Hide right titles
-          ),
-        ),
-        maxY: (counts.isNotEmpty) ? (counts.reduce((a, b) => a > b ? a : b) + 1).toDouble() : 1,
-        barGroups: barGroups,
-      ),
-    ),
-  );
+  // Calculate total posts  
+  int totalPosts = counts.reduce((a, b) => a + b);  
+
+  // Map the data to BarChartGroupData  
+  List<BarChartGroupData> barGroups = data.asMap().entries.map((entry) {  
+    return BarChartGroupData(  
+      x: entry.key,  
+      barRods: [  
+        BarChartRodData(  
+          toY: entry.value['count'].toDouble(),  
+          color: Colors.red,  
+          width: 20,  
+          borderRadius: BorderRadius.circular(4),  
+        ),  
+      ],  
+    );  
+  }).toList();  
+
+  return Padding(  
+    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),  
+    child: Stack(  
+      children: [  
+        BarChart(  
+          BarChartData(  
+            borderData: FlBorderData(  
+              show: true,  
+              border: Border.all(color: Colors.black, width: 1),  
+            ),  
+            gridData: const FlGridData(  
+              show: true,  
+              horizontalInterval: 1,  
+              verticalInterval: 1,  
+            ),  
+            titlesData: FlTitlesData(  
+              leftTitles: AxisTitles(  
+                sideTitles: SideTitles(  
+                  showTitles: true,  
+                  getTitlesWidget: (value, meta) {  
+                    return Text(  
+                      value.toInt().toString(),  
+                      style: const TextStyle(fontSize: 12),  
+                    );  
+                  },  
+                ),  
+                axisNameWidget: const Text(  
+                  'Incident Count',  
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),  
+                ),  
+                axisNameSize: 16,  
+              ),  
+              bottomTitles: AxisTitles(  
+                sideTitles: SideTitles(  
+                  showTitles: true,  
+                  interval: 1,  
+                  getTitlesWidget: (value, meta) {  
+                    int index = value.round();  
+                    if (index >= 0 && index < categories.length) {  
+                      return Padding(  
+                        padding: const EdgeInsets.only(top: 8.0),  
+                        child: RotatedBox(  
+                          quarterTurns: 3, // Rotate 270 degrees  
+                          child: Text(  
+                            categories[index],  
+                            style: const TextStyle(  
+                              fontSize: 10,  
+                              overflow: TextOverflow.ellipsis,  
+                            ),  
+                            textAlign: TextAlign.right,  
+                          ),  
+                        ),  
+                      );  
+                    }  
+                    return const Text('');  
+                  },  
+                  reservedSize: 60, // Increased to accommodate rotated labels  
+                ),  
+                axisNameWidget: const Text(  
+                  'Category',  
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),  
+                ),  
+                axisNameSize: 16,  
+              ),  
+              topTitles: const AxisTitles(  
+                sideTitles: SideTitles(showTitles: false),  
+              ),  
+              rightTitles: const AxisTitles(  
+                sideTitles: SideTitles(showTitles: false),  
+              ),  
+            ),  
+            maxY: (counts.isNotEmpty)   
+              ? (counts.reduce((a, b) => a > b ? a : b) + 1).toDouble()   
+              : 1,  
+            barGroups: barGroups,  
+          ),  
+        ),  
+        Positioned(  
+          top: 0,  
+          right: 0,  
+          child: Container(  
+            padding: const EdgeInsets.all(8.0),  
+            decoration: BoxDecoration(  
+              color: Colors.black.withOpacity(0.1),  
+              borderRadius: BorderRadius.circular(8.0),  
+            ),  
+            child: Text(  
+              'Total = $totalPosts',  
+              style: const TextStyle(  
+                fontSize: 14,  
+                fontWeight: FontWeight.bold,  
+              ),  
+            ),  
+          ),  
+        ),  
+      ],  
+    ),  
+  );  
 }
 
-Widget _buildPieChartIncidentCategory(List<Map<String, dynamic>> data) {
-  List<Color> pieChartColors = Colors.primaries;
+Widget _buildPieChartIncidentCategory(List<Map<String, dynamic>> data) {  
+  // Check if data is empty or all counts are zero  
+  bool hasNoData = data.isEmpty || data.every((item) => item['count'] == 0);  
 
-  List<PieChartSectionData> pieSections = data.asMap().entries.map((entry) {
-    final index = entry.key;
-    final value = entry.value;
-    final count = value['count'] as int;
+  // If no data, return the "No data to display" message  
+  if (hasNoData) {  
+    return const Center(child: Text("No data to display"));  
+  }  
 
-    return PieChartSectionData(
-      color: pieChartColors[index % pieChartColors.length],
-      value: count.toDouble(),
-      title: count.toString(),
-      radius: 80,
-      titleStyle: const TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.bold,
-        color: Colors.white,
-      ),
-    );
-  }).toList();
+  List<Color> pieChartColors = Colors.primaries;  
 
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
-    child: SingleChildScrollView(
-      child: Column(
-        children: [
-          SizedBox(
-            height: 300,
-            child: PieChart(
-              PieChartData(
-                sections: pieSections,
-                sectionsSpace: 2,
-                centerSpaceRadius: 50,
-                borderData: FlBorderData(show: false),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Wrap(
-            spacing: 16,
-            runSpacing: 8,
-            alignment: WrapAlignment.center,
-            children: data.asMap().entries.map((entry) {
-              final index = entry.key;
-              final value = entry.value;
-              final category = value['category'] as String;
+  List<PieChartSectionData> pieSections = data.asMap().entries.map((entry) {  
+    final index = entry.key;  
+    final value = entry.value;  
+    final count = value['count'] as int;  
 
-              return Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 16,
-                    height: 16,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: pieChartColors[index % pieChartColors.length],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    category,
-                    style: const TextStyle(fontSize: 14),
-                  ),
-                ],
-              );
-            }).toList(),
-          ),
-        ],
-      ),
-    ),
-  );
+    return PieChartSectionData(  
+      color: pieChartColors[index % pieChartColors.length],  
+      value: count.toDouble(),  
+      title: count.toString(),  
+      radius: 80,  
+      titleStyle: const TextStyle(  
+        fontSize: 14,  
+        fontWeight: FontWeight.bold,  
+        color: Colors.white,  
+      ),  
+    );  
+  }).toList();  
+
+  return Padding(  
+    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),  
+    child: SingleChildScrollView(  
+      child: Column(  
+        children: [  
+          SizedBox(  
+            height: 300,  
+            child: PieChart(  
+              PieChartData(  
+                sections: pieSections,  
+                sectionsSpace: 2,  
+                centerSpaceRadius: 50,  
+                borderData: FlBorderData(show: false),  
+              ),  
+            ),  
+          ),  
+          const SizedBox(height: 16),  
+          Wrap(  
+            spacing: 16,  
+            runSpacing: 8,  
+            alignment: WrapAlignment.center,  
+            children: data.asMap().entries.map((entry) {  
+              final index = entry.key;  
+              final value = entry.value;  
+              final category = value['category'] as String;  
+
+              return Row(  
+                mainAxisSize: MainAxisSize.min,  
+                children: [  
+                  Container(  
+                    width: 16,  
+                    height: 16,  
+                    decoration: BoxDecoration(  
+                      shape: BoxShape.circle,  
+                      color: pieChartColors[index % pieChartColors.length],  
+                    ),  
+                  ),  
+                  const SizedBox(width: 8),  
+                  Text(  
+                    category,  
+                    style: const TextStyle(fontSize: 14),  
+                  ),  
+                ],  
+              );  
+            }).toList(),  
+          ),  
+        ],  
+      ),  
+    ),  
+  );  
 }
-
   String _getDayOfWeek(DateTime date) {
     return date.weekday == DateTime.monday
         ? 'Mon'
