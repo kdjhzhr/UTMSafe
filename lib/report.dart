@@ -11,7 +11,7 @@ class Report extends StatefulWidget {
 
 class _ReportState extends State<Report> {
   String mainDropdownValue = 'Incident Post';
-  String timeFilterValue = 'Day';
+  String timeFilterValue = 'Today';
   String chartTypeValue = 'Bar Chart';
 
   Future<Map<String, dynamic>> _fetchMostCommonCategoryWithCount() async {  
@@ -47,7 +47,7 @@ class _ReportState extends State<Report> {
 
   Stream<List<int>> _fetchIncidentPostData() async* {  
   DateTime now = DateTime.now();  
-  DateTime startTime = timeFilterValue == 'Day'   
+  DateTime startTime = timeFilterValue == 'Today'   
     ? DateTime(now.year, now.month, now.day)  
     : now.subtract(const Duration(days: 7));  
 
@@ -73,7 +73,7 @@ class _ReportState extends State<Report> {
 
   Stream<List<Map<String, dynamic>>> _fetchCategoryCounts() async* {  
   DateTime now = DateTime.now();  
-  DateTime startTime = timeFilterValue == 'Day'   
+  DateTime startTime = timeFilterValue == 'Today'   
     ? DateTime(now.year, now.month, now.day)  
     : now.subtract(const Duration(days: 7));  
 
@@ -184,7 +184,7 @@ Widget build(BuildContext context) {
         ),
         DropdownButton<String>(
           value: timeFilterValue,
-          items: ['Day', 'Week']
+          items: ['Today', 'Week']
               .map((e) => DropdownMenuItem(value: e, child: Text(e)))
               .toList(),
           onChanged: (value) => setState(() => timeFilterValue = value!),
