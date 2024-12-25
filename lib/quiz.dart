@@ -262,16 +262,24 @@ class SafetyQuizPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Quiz Categories',
-          style: TextStyle(
-            color: Color(0xFF8B0000),
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-          ),
-        ),
-        backgroundColor: const Color(0xFFF5E9D4),
-      ),
+  leading: IconButton(
+    icon: const Icon(Icons.arrow_back, color: Color(0xFF8B0000)),
+    onPressed: () {
+      Navigator.pop(context); // Ensure clean back navigation
+    },
+  ),
+  title: const Text(
+    'Quiz Categories',
+    style: TextStyle(
+      color: Color(0xFF8B0000),
+      fontWeight: FontWeight.bold,
+      fontSize: 20,
+    ),
+  ),
+  backgroundColor: const Color(0xFFF5E9D4),
+),
+
+    
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -388,6 +396,8 @@ class _QuizPageState extends State<QuizPage> {
   @override
   Widget build(BuildContext context) {
     final question = widget.questions[_currentQuestionIndex];
+    final totalQuestions = widget.questions.length;
+    final questionNumber = _currentQuestionIndex + 1;
 
     return Scaffold(
       appBar: AppBar(
@@ -400,6 +410,16 @@ class _QuizPageState extends State<QuizPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Display question progress
+            Text(
+              'Question $questionNumber/$totalQuestions',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[700],
+              ),
+            ),
+            const SizedBox(height: 10),
             Text(
               question['question'],
               style: TextStyle(
@@ -539,7 +559,10 @@ class QuizResultPage extends StatelessWidget {
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const SafetyQuizPage(),
+                      builder: (context) => QuizPage(
+                        categoryName: categoryName,
+                        questions: questions,
+                      ),
                     ),
                   );
                 },
@@ -547,9 +570,10 @@ class QuizResultPage extends StatelessWidget {
                   backgroundColor: const Color(0xFF8B0000),
                   foregroundColor: Colors.white,
                 ),
-                child: const Text('Back to Categories'),
+                child: const Text('Restart Quiz'),
               ),
             ),
+
           ],
         ),
       ),
