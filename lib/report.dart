@@ -163,6 +163,16 @@ class _ReportState extends State<Report> {
         padding: const EdgeInsets.all(16.0),  
         child: Column(  
           children: [  
+            Text(  
+            'Incident Activity Report',  
+            style: TextStyle(  
+              fontSize: 24, // Adjust size as needed  
+              fontWeight: FontWeight.bold,  
+              color: Colors.black, // Change color if needed  
+            ),  
+          ),  
+          SizedBox(height: 16),
+          
             // Row to separate alert banner and category filter  
             Row(  
               children: [  
