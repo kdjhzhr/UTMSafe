@@ -104,32 +104,28 @@ class _ReportState extends State<Report> {
 
 // Method to fetch category count for the last 7 days  
   Stream<int> _fetchCategoryCount(String category) async* {  
-    DateTime now = DateTime.now();  
-    DateTime sevenDaysAgo = now.subtract(const Duration(days: 7));  
+  try {  
+    // Reference to the category_count collection  
+    DocumentReference categoryDoc = FirebaseFirestore.instance.collection('category_count').doc(category);  
 
-    try {  
-      // If 'Category' is selected, return total count for the week  
-      if (category == 'Category') {  
-        yield* FirebaseFirestore.instance  
-            .collection('posts')  
-            .where('timestamp', isGreaterThanOrEqualTo: sevenDaysAgo)  
-            .snapshots()  
-            .map((snapshot) => snapshot.docs.length);  
-        return;  
+    // Listen for changes to the document  
+    yield* categoryDoc.snapshots().map((snapshot) {  
+      if (snapshot.exists) {  
+        // Cast the data to a Map<String, dynamic>  
+        final data = snapshot.data() as Map<String, dynamic>;  
+        print('Fetched data for $category: $data'); // Debugging output  
+        return data['count'] ?? 0; // Default to 0 if count field is missing  
+      } else {  
+        // Document does not exist  
+        print('Document for $category does not exist.');  
+        return 0;  
       }  
-
-      // For specific category, filter by category for the week  
-      yield* FirebaseFirestore.instance  
-          .collection('posts')  
-          .where('timestamp', isGreaterThanOrEqualTo: sevenDaysAgo)  
-          .where('category', isEqualTo: category)  
-          .snapshots()  
-          .map((snapshot) => snapshot.docs.length);  
-    } catch (e) {  
-      print('Error fetching category count: $e');  
-      yield 0;  
-    }  
-  } 
+    });  
+  } catch (e) {  
+    print('Error fetching category count: $e');  
+    yield 0; // Return 0 in case of error  
+  }  
+}
 
   Widget _buildChart() {
     if (mainDropdownValue == 'Incident Post') {
@@ -242,48 +238,57 @@ Padding(
 
       // Larger Counter  
       StreamBuilder<int>(  
-        stream: _fetchCategoryCount(_selectedCategory),  
-        builder: (context, snapshot) {  
-          if (snapshot.connectionState == ConnectionState.waiting) {  
-            return const SizedBox(  
-              width: 20,  
-              height: 20,  
-              child: CircularProgressIndicator(  
-                strokeWidth: 2,  
-              ),  
-            );  
-          }  
-          
-          if (snapshot.hasError) {  
-            return Text(  
-              'Error',  
-              style: TextStyle(color: Colors.red.shade700, fontSize: 12),  
-            );  
-          }  
-          
-          final categoryCount = snapshot.data ?? 0;  
-          return Container(  
-            margin: const EdgeInsets.only(left: 8),  
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),  
-            decoration: BoxDecoration(  
-              color: categoryCount > 0 ? Colors.red.shade100 : Colors.grey.shade200,  
-              border: Border.all(  
-                color: categoryCount > 0 ? Colors.red : Colors.grey,  
-                width: 1,  
-              ),  
-              borderRadius: BorderRadius.circular(12), // More rounded  
-            ),  
-            child: Text(  
-              '$categoryCount',  
-              style: TextStyle(  
-                fontSize: 16, // Larger font size  
-                fontWeight: FontWeight.bold,  
-                color: categoryCount > 0 ? Colors.red.shade800 : Colors.grey.shade700,  
-              ),  
-            ),  
-          );  
-        },  
+  stream: _fetchCategoryCount(_selectedCategory),  
+  builder: (context, snapshot) {  
+    if (snapshot.connectionState == ConnectionState.waiting) {  
+      return Container(  
+        margin: const EdgeInsets.only(left: 8),  
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),  
+        child: SizedBox(  
+          width: 20,  
+          height: 20,  
+          child: CircularProgressIndicator(  
+            strokeWidth: 2,  
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.grey.shade500),  
+          ),  
+        ),  
+      );  
+    }  
+
+    if (snapshot.hasError) {  
+      return Container(  
+        margin: const EdgeInsets.only(left: 8),  
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),  
+        child: Text(  
+          'Error',  
+          style: TextStyle(color: Colors.red.shade700, fontSize: 12),  
+        ),  
+      );  
+    }  
+
+    final categoryCount = snapshot.data ?? 0;  
+    return Container(  
+      margin: const EdgeInsets.only(left: 8),  
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),  
+      decoration: BoxDecoration(  
+        color: categoryCount > 0 ? Colors.red.shade100 : Colors.grey.shade200,  
+        border: Border.all(  
+          color: categoryCount > 0 ? Colors.red : Colors.grey,  
+          width: 1,  
+        ),  
+        borderRadius: BorderRadius.circular(12),  
       ),  
+      child: Text(  
+        '$categoryCount',  
+        style: TextStyle(  
+          fontSize: 16,  
+          fontWeight: FontWeight.bold,  
+          color: categoryCount > 0 ? Colors.red.shade800 : Colors.grey.shade700,  
+        ),  
+      ),  
+    );  
+  },  
+)  
     ],  
   ),  
 )
@@ -361,7 +366,7 @@ Padding(
                   ),  
                   if (count > 0)  
                     TextSpan(  
-                      text: ' ($count incidents)',  
+                      text: ' (Count: $count)',  
                       style: const TextStyle(color: Colors.grey),  
                     ),  
                 ],  
