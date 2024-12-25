@@ -104,9 +104,15 @@ class _ReportState extends State<Report> {
 
 // Method to fetch category count for the last 7 days  
   Stream<int> _fetchCategoryCount(String category) async* {  
+  // Skip fetching if the category is the default "Category"  
+  if (category == 'Category') {  
+    yield 0;  
+    return;  
+  }  
+
   try {  
     // Reference to the category_count collection  
-    DocumentReference categoryDoc = FirebaseFirestore.instance.collection('category_count').doc(category);  
+    DocumentReference categoryDoc = FirebaseFirestore.instance.collection('category_counts').doc(category);  
 
     // Listen for changes to the document  
     yield* categoryDoc.snapshots().map((snapshot) {  
@@ -172,7 +178,7 @@ class _ReportState extends State<Report> {
             ),  
           ),  
           SizedBox(height: 16),
-          
+
             // Row to separate alert banner and category filter  
             Row(  
               children: [  
