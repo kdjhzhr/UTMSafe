@@ -36,15 +36,16 @@ class _LoginPageState extends State<LoginPage> {
                 const SizedBox(height: 5),
                 Center(
                   child: const Text(
-                    'Your Safety is Our Priority',
+                    'Welcome! \n Please login to continue',
+                    textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 20,
                       color: Colors.black,
-                      fontStyle: FontStyle.italic,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
-                const SizedBox(height: 70),
+                const SizedBox(height: 30),
 
                 // Username text field
                 Padding(
@@ -69,7 +70,7 @@ class _LoginPageState extends State<LoginPage> {
                 // Instruction for username
                 Center(
                   child: const Text(
-                    'Enter the part of your email before the "@" symbol \n (e.g., "ahmad03" for "ahmad03@gmail.com")',
+                    'Enter the part of your email before the "@" symbol \n     (e.g., "ahmad03" for "ahmad03@gmail.com")',
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey,
