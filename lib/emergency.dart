@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'studentfeedpage.dart'; // Import the FeedPage (or your Feed page)
-import 'safety.dart'; // Import the safety.dart file
-import 'quiz.dart'; // Import the quiz.dart file (the page where your quiz is implemented)
+import 'quiz.dart'; // Import the quiz.dart file
+import 'studentfeedpage.dart'; // Import the FeedPage
+import 'safety.dart'; // Import the safety.dart file for EarlyMeasurementPage
 
 class SosPage extends StatefulWidget {
   const SosPage({super.key});
@@ -14,7 +14,7 @@ class SosPage extends StatefulWidget {
 class _SosPageState extends State<SosPage> {
   int _selectedIndex = 1;
 
-  // Sample emergency contacts
+  // Emergency contacts
   final List<Map<String, String>> _emergencyContacts = [
     {'name': 'Balai Keselamatan', 'phone': '+6075333013'},
     {'name': 'Pusat Kesihatan UTM', 'phone': '+6075530999'},
@@ -22,7 +22,7 @@ class _SosPageState extends State<SosPage> {
     {'name': 'Gangguan Haiwan Liar 2', 'phone': '+6075530002'},
   ];
 
-  // Function to copy phone number to clipboard
+  // Function to copy a phone number to the clipboard
   void _copyToClipboard(String phoneNumber) {
     Clipboard.setData(ClipboardData(text: phoneNumber)).then((_) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -31,7 +31,7 @@ class _SosPageState extends State<SosPage> {
     });
   }
 
-  // Handle bottom navigation item taps
+  // Handle bottom navigation
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -40,11 +40,6 @@ class _SosPageState extends State<SosPage> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => FeedPage()), // Feed Page
-      );
-    } else if (_selectedIndex == 1) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => SosPage()), // Sos Page
       );
     }
   }
@@ -66,11 +61,10 @@ class _SosPageState extends State<SosPage> {
         centerTitle: true,
       ),
       body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Emergency contact section
+          // Emergency Contact Section
           const Padding(
-            padding: EdgeInsets.all(16.0),
+            padding: EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
             child: Row(
               children: [
                 Icon(
@@ -82,7 +76,7 @@ class _SosPageState extends State<SosPage> {
                 Text(
                   'Emergency Contact',
                   style: TextStyle(
-                    fontSize: 24,
+                    fontSize: 22,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF8B0000),
                   ),
@@ -95,60 +89,41 @@ class _SosPageState extends State<SosPage> {
               itemCount: _emergencyContacts.length,
               itemBuilder: (context, index) {
                 final contact = _emergencyContacts[index];
-                return ListTile(
-                  title: Text(contact['name']!),
-                  subtitle: Text(contact['phone']!),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.copy, color: Color(0xFF8B0000)),
-                    onPressed: () => _copyToClipboard(contact['phone']!),
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+                  child: Card(
+                    elevation: 2,
+                    child: ListTile(
+                      title: Text(contact['name']!),
+                      subtitle: Text(contact['phone']!),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.copy, color: Color(0xFF8B0000)),
+                        onPressed: () => _copyToClipboard(contact['phone']!),
+                      ),
+                    ),
                   ),
                 );
               },
             ),
           ),
-          const Divider(thickness: 2, color: Color(0xFF8B0000)),
-
-          // Quiz Button
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => SafetyQuizPage(), // Navigate to the quiz page
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF8B0000),
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12), // Adjusted padding for button
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                ),
-                child: const Text(
-                  'Quiz', // Text updated to 'Quiz'
-                  style: TextStyle(fontSize: 20, color: Colors.white),
-                ),
-              ),
-            ),
+          
+          // Divider Line between Emergency Contact and Safety Tips
+          const Divider(
+            color: Color(0xFF8B0000), // Divider color
+            thickness: 2, // Divider thickness
+            indent: 16, // Indentation to align with other content
+            endIndent: 16, // Indentation to align with other content
           ),
 
-          // Bottom redirect link
+          // Reduced space from the divider line to the next section
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 6.0), // Reduced vertical space
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const Text(
                   'Already called help? What need to do while waiting for help to come?',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.black,
-                  ),
+                  style: TextStyle(fontSize: 15),
                 ),
                 TextButton(
                   onPressed: () {
@@ -162,10 +137,42 @@ class _SosPageState extends State<SosPage> {
                   child: const Text(
                     'Take this early measurement tips',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 15,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF8B0000),
                       decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 2), // Reduced height between the text and the button
+                const Text(
+                  'Think you know how to stay safe? Test your knowledge with this safety quiz!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 15),
+                ),
+                const SizedBox(height: 10), // Adjusted height to bring the button closer
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SafetyQuizPage(), // Navigate to the quiz page
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFF8B0000), // Background color
+                    foregroundColor: Colors.white, // Text color
+                    padding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 24.0), // Padding inside the button
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0), // Rounded corners
+                    ),
+                  ),
+                  child: const Text(
+                    'Take safety quiz',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
