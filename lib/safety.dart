@@ -170,6 +170,35 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
       'comments': [],
       'likes': 0,
     },
+    {
+      'id': 'cpr',
+      'title': 'CPR (Cardiopulmonary Resuscitation)',
+      'steps': [
+        'Ensure the scene is safe for you and the injured person.',
+        'Check for responsiveness by tapping the person and shouting.',
+        'If no response and no breathing, call for emergency help immediately.',
+        'Start chest compressions: Place your hands in the center of the chest and push hard and fast (100-120 compressions per minute).',
+        'If trained, provide rescue breaths after 30 compressions.',
+        'Continue CPR until professional help arrives or the person starts breathing.',
+      ],
+      'comments': [],
+      'likes': 0,
+    },
+    {
+      'id': 'first_aid',
+      'title': 'First Aid Treatment',
+      'steps': [
+        'Ensure the scene is safe before assisting.',
+        'For bleeding, apply direct pressure to the wound using a clean cloth.',
+        'If the person is in shock, lay them down and elevate their legs slightly unless there’s an injury that prevents it.',
+        'For burns, cool the burn under running water for at least 10 minutes and cover with a clean, non-fluffy dressing.',
+        'For fractures, immobilize the injured area and avoid moving it.',
+        'For choking, perform back blows and abdominal thrusts if the person is conscious, or begin CPR if they lose consciousness.',
+        'Stay calm and reassure the person until professional help arrives.',
+      ],
+      'comments': [],
+      'likes': 0,
+    },
   ];
 
   // Function to add a comment to Firebase Firestore
