@@ -13,6 +13,14 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _filteredTips = [];
+  String? _selectedCategory;
+
+  final List<String> _categories = [
+    'All',
+    'Environmental & Natural Disasters',
+    'Health & First Aid',
+    'Safety & Security',
+  ];
 
   final List<Map<String, dynamic>> _safetyTips = [
     {
@@ -26,6 +34,7 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
       ],
       'comments': [],
       'likes': 0,
+      'category': 'Safety & Security',
     },
     {
       'id': 'snake_encounter',
@@ -38,6 +47,7 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
       ],
       'comments': [],
       'likes': 0,
+      'category': 'Safety & Security'
     },
     {
       'id': 'fire_emergency',
@@ -62,6 +72,7 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
       ],
       'comments': [],
       'likes': 0,
+      'category': 'Safety & Security'
     },
     {
       'id': 'minor_accident',
@@ -74,6 +85,7 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
       ],
       'comments': [],
       'likes': 0,
+      'category': 'Health & First Aid'
     },
     {
       'id': 'electric_shock',
@@ -86,6 +98,7 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
       ],
       'comments': [],
       'likes': 0,
+      'category': 'Health & First Aid'
     },
     {
       'id': 'medical_emergency',
@@ -98,6 +111,7 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
       ],
       'comments': [],
       'likes': 0,
+      'category': 'Health & First Aid'
     },
     {
       'id': 'flooding',
@@ -110,6 +124,7 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
       ],
       'comments': [],
       'likes': 0,
+      'category': 'Environmental & Natural Disasters'
     },
     {
       'id': 'earthquake',
@@ -122,6 +137,7 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
       ],
       'comments': [],
       'likes': 0,
+      'category': 'Environmental & Natural Disasters'
     },
     {
       'id': 'building_collapse',
@@ -133,6 +149,7 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
       ],
       'comments': [],
       'likes': 0,
+      'category': 'Environmental & Natural Disasters'
     },
     {
       'id': 'chemical_spill',
@@ -145,6 +162,7 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
       ],
       'comments': [],
       'likes': 0,
+      'category': 'Environmental & Natural Disasters'
     },
     {
       'id': 'active_shooter',
@@ -157,6 +175,7 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
       ],
       'comments': [],
       'likes': 0,
+      'category': 'Safety & Security'
     },
     {
       'id': 'heat_stroke',
@@ -169,6 +188,7 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
       ],
       'comments': [],
       'likes': 0,
+      'category': 'Health & First Aid'
     },
     {
       'id': 'cpr',
@@ -183,6 +203,7 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
       ],
       'comments': [],
       'likes': 0,
+      'category': 'Health & First Aid'
     },
     {
       'id': 'first_aid',
@@ -198,10 +219,19 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
       ],
       'comments': [],
       'likes': 0,
+      'category': 'Health & First Aid'
     },
   ];
 
-  // Function to add a comment to Firebase Firestore
+  void _searchTips() {
+    String query = _searchController.text.toLowerCase();
+    setState(() {
+      _filteredTips = _safetyTips
+          .where((tip) => tip['title'].toLowerCase().contains(query))
+          .toList();
+    });
+  }
+
   Future<void> _addComment(String tipId) async {
     if (_commentController.text.isNotEmpty) {
       try {
@@ -252,7 +282,6 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
     }
   }
 
-  // Function to get comments from Firestore
   Stream<QuerySnapshot> _getComments(String tipId) {
     return _firestore
         .collection('safety_tips')
@@ -269,12 +298,19 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
     _searchController.addListener(_searchTips); // Set up search listener
   }
 
-  void _searchTips() {
+  void _filterTips() {
     String query = _searchController.text.toLowerCase();
     setState(() {
-      _filteredTips = _safetyTips
-          .where((tip) => tip['title'].toLowerCase().contains(query))
-          .toList();
+      _filteredTips = _safetyTips.where((tip) {
+        // Check if the tip title contains the search query
+        bool matchesSearch = tip['title'].toLowerCase().contains(query);
+
+        // Check if the tip category matches the selected category
+        bool matchesCategory =
+            _selectedCategory == 'All' || tip['category'] == _selectedCategory;
+
+        return matchesSearch && matchesCategory;
+      }).toList();
     });
   }
 
@@ -296,6 +332,26 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.search),
               ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: DropdownButton<String>(
+              value: _selectedCategory,
+              hint: Text('Select Category'),
+              onChanged: (newValue) {
+                setState(() {
+                  _selectedCategory = newValue;
+                  // Filter tips based on the selected category
+                  _filterTips();
+                });
+              },
+              items: _categories.map((String category) {
+                return DropdownMenuItem<String>(
+                  value: category,
+                  child: Text(category),
+                );
+              }).toList(),
             ),
           ),
           Expanded(
@@ -432,8 +488,7 @@ class _EarlyMeasurementPageState extends State<EarlyMeasurementPage> {
                                     itemBuilder: (context, commentIndex) {
                                       final comment = comments[commentIndex];
                                       return ListTile(
-                                        title:
-                                            Text(comment['text'] ?? 'No text'),
+                                        title: Text(comment['text']),
                                       );
                                     },
                                   );
