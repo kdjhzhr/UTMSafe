@@ -18,11 +18,13 @@ class _FeedPageState extends State<FeedPage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   String? _username;
+  String currentUserRole = ''; 
 
   @override
   void initState() {
     super.initState();
     _fetchUsername();
+    getUserRole();
   }
 
   void _showUserDetailsDialog(String username) {
@@ -81,6 +83,14 @@ class _FeedPageState extends State<FeedPage> {
       },
     );
   }
+
+Future<void> getUserRole() async {
+  final userId = FirebaseAuth.instance.currentUser?.uid;
+  if (userId != null) {
+    final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    currentUserRole = userDoc['role']; // Assuming 'role' field stores 'student' or 'police'
+  }
+}
 
   Future<void> _fetchUsername() async {
     try {
@@ -566,8 +576,10 @@ class _FeedPageState extends State<FeedPage> {
                             Row(
                               children: [
                                 CircleAvatar(
-                                  radius: 20, backgroundColor: Colors.grey[300],
-                                  child: const Icon(Icons.person, color: Colors.grey),
+                                  radius: 20,
+                                    backgroundColor: Colors.grey[300],
+                                    child: const Icon(Icons.school, color: Colors.black,
+                                    ),
                                 ),
                                 const SizedBox(width: 8),
                                 GestureDetector(
@@ -669,8 +681,10 @@ class _FeedPageState extends State<FeedPage> {
                                                 contentPadding:
                                                     const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                                                 leading: CircleAvatar(radius: 20,backgroundColor:Colors.grey[300],
-                                                  child: const Icon(Icons.person, color: Colors.grey),
-                                                ),
+                                                    child: Icon(currentUserRole == 'student' 
+                                                          ? Icons.school : Icons.security, color: Colors.black,
+                                                    ),
+                                                  ),
                                                 title: Row(
                                                   children: [
                                                     Flexible(
