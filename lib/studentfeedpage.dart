@@ -662,7 +662,9 @@ Future<void> _addComment(String postId, String comment) async {
                             // View comments dropdown
                             StreamBuilder<QuerySnapshot>(
                               stream: _firestore
-                                  .collection('posts').doc(post.id).collection('comments').snapshots(),
+                                  .collection('posts').doc(post.id).collection('comments')
+                                  .orderBy('timestamp', descending: true)
+                                  .snapshots(),
                               builder: (context, snapshot) {
                                 if (snapshot.connectionState ==
                                     ConnectionState.waiting) {
