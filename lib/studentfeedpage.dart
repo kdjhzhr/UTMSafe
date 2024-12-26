@@ -214,8 +214,13 @@ Future<void> getUserRole() async {
     }
   }
 
-  Future<void> _addComment(String postId, String comment) async {
-    try {
+Future<void> _addComment(String postId, String comment) async {
+  try {
+    final uid = _auth.currentUser?.uid;
+    if (uid != null) {
+      final userDoc = await _firestore.collection('users').doc(uid).get();
+      final role = userDoc.data()?['role'] ?? 'student';  // Fetch the user's role
+
       await _firestore
           .collection('posts')
           .doc(postId)
@@ -224,11 +229,13 @@ Future<void> getUserRole() async {
         'comment': comment,
         'userName': _username ?? 'Unknown',
         'timestamp': FieldValue.serverTimestamp(),
+        'role': role,  // Store the user's role in the comment
       });
-    } catch (e) {
-      print("Error adding comment: $e");
     }
+  } catch (e) {
+    print("Error adding comment: $e");
   }
+}
 
   Future<void> _updateComment(
       String postId, String commentId, String newComment) async {
@@ -674,15 +681,14 @@ Future<void> getUserRole() async {
                                               final commentText = commentData['comment'] ?? '';
                                               final userName = commentData['userName'] ?? 'Unknown';
                                               final timestamp = commentData['timestamp'] as Timestamp?;
-                                              final formattedTime = timestamp != null
-                                                  ? _formatTimestamp(timestamp): 'Unknown time';
+                                              final formattedTime = timestamp != null ? _formatTimestamp(timestamp): 'Unknown time';
+                                              final userRole = commentData['role'] ?? 'student';
 
                                               return ListTile(
                                                 contentPadding:
                                                     const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                                                 leading: CircleAvatar(radius: 20,backgroundColor:Colors.grey[300],
-                                                    child: Icon(currentUserRole == 'student' 
-                                                          ? Icons.school : Icons.security, color: Colors.black,
+                                                    child: Icon(userRole == 'student' ? Icons.school : Icons.security, color: Colors.black,
                                                     ),
                                                   ),
                                                 title: Row(
