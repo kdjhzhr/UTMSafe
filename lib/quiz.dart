@@ -1,587 +1,603 @@
 import 'package:flutter/material.dart';
 
-class SafetyQuizPage extends StatelessWidget {
-  const SafetyQuizPage({super.key});
-
-
-  @override
-  Widget build(BuildContext context) {
-    // Categories for the quiz with 5 questions each
-    final List<Map<String, dynamic>> quizCategories = [
-      {
-        'title': 'First Aid Treatment',
-        'questions': [
-          {
-            'question': 'What should you do if you see smoke coming from an electrical outlet?',
-            'options': [
-              'Pour water on it',
-              'Call an electrician immediately',
-              'Turn off the main power and unplug devices',
-              'Ignore it'
-            ],
-            'correct': 2,
-          },
-          {
-            'question': 'Which number should you call in case of a fire emergency?',
-            'options': ['911', '112', '999', 'All of the above'],
-            'correct': 3,
-          },
-          {
-            'question': 'How should you treat a burn?',
-            'options': [
-              'Apply butter or oil',
-              'Cool the burn with running water for 10 minutes',
-              'Apply ice directly to the burn',
-              'Cover it with a blanket'
-            ],
-            'correct': 1,
-          },
-          {
-            'question': 'If someone is choking, what should you do?',
-            'options': [
-              'Perform the Heimlich maneuver',
-              'Give them water',
-              'Slap their back',
-              'Do nothing, they will be fine'
-            ],
-            'correct': 0,
-          },
-          {
-            'question': 'What is the first thing to do in case of a bleeding wound?',
-            'options': [
-              'Apply pressure to stop the bleeding',
-              'Use a tourniquet immediately',
-              'Put the person to sleep',
-              'Give them something to drink'
-            ],
-            'correct': 0,
-          },
-        ],
-      },
-      {
-        'title': 'CPR',
-        'questions': [
-          {
-            'question': 'What is the first step in performing CPR?',
-            'options': [
-              'Check if the person is breathing',
-              'Give chest compressions',
-              'Call 911',
-              'Administer rescue breaths'
-            ],
-            'correct': 2,
-          },
-          {
-            'question': 'What is the ratio of chest compressions to rescue breaths?',
-            'options': ['30:2', '15:2', '30:1', '60:2'],
-            'correct': 0,
-          },
-          {
-            'question': 'How deep should chest compressions be during CPR?',
-            'options': [
-              '1-2 inches',
-              '2-3 inches',
-              '3-4 inches',
-              '4-5 inches'
-            ],
-            'correct': 1,
-          },
-          {
-            'question': 'How fast should chest compressions be performed?',
-            'options': [
-              '100-120 per minute',
-              '80-100 per minute',
-              '120-140 per minute',
-              '150 per minute'
-            ],
-            'correct': 0,
-          },
-          {
-            'question': 'When should you stop performing CPR?',
-            'options': [
-              'When the person starts breathing',
-              'When professional help arrives',
-              'When you are too tired to continue',
-              'All of the above'
-            ],
-            'correct': 3,
-          },
-        ],
-      },
-      {
-        'title': 'Activities Preparation',
-        'questions': [
-          {
-            'question': 'What is the first thing you should do before an outdoor activity?',
-            'options': [
-              'Check the weather',
-              'Pack a first aid kit',
-              'Inform someone about your plans',
-              'All of the above'
-            ],
-            'correct': 3,
-          },
-          {
-            'question': 'How often should you review your emergency preparedness plan?',
-            'options': ['Every 6 months', 'Annually', 'Every 3 years', 'Only when an emergency occurs'],
-            'correct': 1,
-          },
-          {
-            'question': 'What should be included in an emergency preparedness kit?',
-            'options': [
-              'Water, food, flashlight, first aid kit',
-              'Clothing, cash, and snacks',
-              'Only first aid supplies',
-              'None of the above'
-            ],
-            'correct': 0,
-          },
-          {
-            'question': 'Why is it important to have an emergency contact list?',
-            'options': [
-              'For insurance purposes',
-              'To ensure quick communication during an emergency',
-              'To track phone usage',
-              'None of the above'
-            ],
-            'correct': 1,
-          },
-          {
-            'question': 'What should you do if you are caught in a snowstorm outdoors?',
-            'options': [
-              'Find shelter and stay warm',
-              'Keep walking to find help',
-              'Ignore the storm and continue your activity',
-              'Call for help and stay where you are'
-            ],
-            'correct': 0,
-          },
-        ],
-      },
-      {
-        'title': 'Mental Health Issues',
-        'questions': [
-          {
-            'question': 'What is a common sign of mental health issues?',
-            'options': [
-              'Sudden weight loss',
-              'Withdrawal from social activities',
-              'Excessive talking',
-              'Increased energy levels'
-            ],
-            'correct': 1,
-          },
-          {
-            'question': 'How can you support someone with mental health issues?',
-            'options': ['Listen without judgment', 'Encourage them to talk to a professional', 'Both of the above', 'Ignore it'],
-            'correct': 2,
-          },
-          {
-            'question': 'What is an effective way to cope with anxiety?',
-            'options': [
-              'Avoid situations that cause anxiety',
-              'Deep breathing exercises',
-              'Taking medication without consulting a doctor',
-              'Engaging in excessive physical activity'
-            ],
-            'correct': 1,
-          },
-          {
-            'question': 'Which of the following is NOT a sign of depression?',
-            'options': [
-              'Feeling hopeless',
-              'Loss of interest in activities',
-              'Increased energy and enthusiasm',
-              'Sleep disturbances'
-            ],
-            'correct': 2,
-          },
-          {
-            'question': 'What is the first step if you suspect someone is struggling with their mental health?',
-            'options': [
-              'Confront them aggressively',
-              'Ignore it and wait for them to reach out',
-              'Encourage them to talk to a mental health professional',
-              'Tell others about their issues'
-            ],
-            'correct': 2,
-          },
-        ],
-      },
-      {
-        'title': 'Emergency Steps',
-        'questions': [
-          {
-            'question': 'What is the first step in an emergency?',
-            'options': [
-              'Call 911',
-              'Ensure safety',
-              'Help the injured',
-              'Look for exits'
-            ],
-            'correct': 1,
-          },
-          {
-            'question': 'What should you do if you are stuck in a building during an emergency?',
-            'options': ['Stay calm', 'Look for an escape route', 'Call for help', 'All of the above'],
-            'correct': 3,
-          },
-          {
-            'question': 'What should you do if you encounter a fire in a building?',
-            'options': [
-              'Run out immediately without looking back',
-              'Stop, drop, and roll',
-              'Call 911 and evacuate carefully',
-              'Use a fire extinguisher'
-            ],
-            'correct': 2,
-          },
-          {
-            'question': 'How should you deal with a person who is unconscious but breathing?',
-            'options': [
-              'Lay them on their back',
-              'Place them in the recovery position',
-              'Shake them to wake up',
-              'Give them water'
-            ],
-            'correct': 1,
-          },
-          {
-            'question': 'What is the best way to prepare for natural disasters?',
-            'options': [
-              'Stay informed about weather conditions',
-              'Prepare an emergency kit',
-              'Know evacuation routes',
-              'All of the above'
-            ],
-            'correct': 3,
-          },
-        ],
-      },
-    ];
-
-    return Scaffold(
-      appBar: AppBar(
-  leading: IconButton(
-    icon: const Icon(Icons.arrow_back, color: Color(0xFF8B0000)),
-    onPressed: () {
-      Navigator.pop(context); // Ensure clean back navigation
-    },
-  ),
-  title: const Text(
-    'Quiz Categories',
-    style: TextStyle(
-      color: Color(0xFF8B0000),
-      fontWeight: FontWeight.bold,
-      fontSize: 20,
-    ),
-  ),
-  backgroundColor: const Color(0xFFF5E9D4),
-),
-
-    
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Choose a Category to Start',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF8B0000),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: ListView.builder(
-                itemCount: quizCategories.length,
-                itemBuilder: (context, index) {
-                  final category = quizCategories[index];
-                  return Card(
-                    elevation: 5,
-                    margin: const EdgeInsets.symmetric(vertical: 10),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.all(16.0),
-                      title: Text(
-                        category['title'],
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      subtitle: Text(
-                        'Tap to start quiz',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey,
-                        ),
-                      ),
-                      trailing: Icon(Icons.arrow_forward),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => QuizPage(
-                              categoryName: category['title'],
-                              questions: category['questions'],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class QuizPage extends StatefulWidget {
-  final String categoryName;
-  final List<Map<String, dynamic>> questions;
-
-  const QuizPage({
-    required this.categoryName,
-    required this.questions,
-    super.key,
-  });
-
   @override
   _QuizPageState createState() => _QuizPageState();
 }
 
 class _QuizPageState extends State<QuizPage> {
-  int _currentQuestionIndex = 0;
-  int _score = 0;
-  bool _showFeedback = false;
-  bool _isCorrect = false;
+  String? selectedCategory;
+  List<Map<String, dynamic>> quizQuestions = [];
 
-  void _checkAnswer(int selectedIndex) {
-    final correctIndex = widget.questions[_currentQuestionIndex]['correct'];
-    setState(() {
-      _isCorrect = selectedIndex == correctIndex;
-      if (_isCorrect) {
-        _score++;
+  final Map<String, List<Map<String, dynamic>>> categories = {
+    'Safety & Security': [
+      {
+        'question': 'What should you do if you encounter a monkey on campus?',
+        'answers': [
+          'Feed the monkey to calm it down',
+          'Stay calm and avoid sudden movements',
+          'Try to scare the monkey away by shouting'
+        ],
+        'correctAnswer': 1
+      },
+      {
+        'question':
+            'What is the first thing to do if you encounter a snake on campus?',
+        'answers': [
+          'Catch it and relocate it',
+          'Keep a safe distance and contact campus security',
+          'Block its path to prevent escape'
+        ],
+        'correctAnswer': 1
+      },
+      {
+        'question':
+            'In the event of a fire emergency, what should you avoid using during evacuation?',
+        'answers': ['Elevators', 'Fire extinguishers', 'Fire alarms'],
+        'correctAnswer': 0
+      },
+      {
+        'question':
+            'If you lose an item on campus, what should be your first action?',
+        'answers': [
+          'Report it to campus security or the lost-and-found department',
+          'Wait for someone to find it',
+          'Leave the campus and forget about it'
+        ],
+        'correctAnswer': 0
+      },
+      {
+        'question':
+            'What is the first step if you are involved in a minor accident?',
+        'answers': [
+          'Leave the scene to avoid trouble',
+          'Assess the situation and check for injuries',
+          'Ignore the situation'
+        ],
+        'correctAnswer': 1
+      },
+      {
+        'question': 'What should you do if you receive an electric shock?',
+        'answers': [
+          'Immediately touch the person to check for injury',
+          'Remove yourself from the source if safe and call for medical help',
+          'Wait for the electric shock to pass on its own'
+        ],
+        'correctAnswer': 1
+      },
+      {
+        'question': 'In a medical emergency, what is the first step?',
+        'answers': [
+          'Ignore it and continue with your activities',
+          'Call campus security or an ambulance immediately',
+          'Give the person food or water'
+        ],
+        'correctAnswer': 1
+      },
+      {
+        'question': 'If you’re caught in a flood, what is the first action?',
+        'answers': [
+          'Stay where you are',
+          'Move to higher ground immediately',
+          'Walk through flooded areas to find safety'
+        ],
+        'correctAnswer': 1
+      },
+      {
+        'question': 'What should you do during an earthquake?',
+        'answers': [
+          'Stand in the doorway',
+          'Drop, take cover under furniture, and hold on',
+          'Leave the building immediately'
+        ],
+        'correctAnswer': 1
+      },
+      {
+        'question':
+            'What should you do if there is a chemical spill on campus?',
+        'answers': [
+          'Evacuate the area immediately',
+          'Wait for someone to clean it up',
+          'Touch the spill to assess the damage'
+        ],
+        'correctAnswer': 0
       }
-      _showFeedback = true;
+    ],
+    'Health & First Aid': [
+      {
+        'question': 'In the event of a heat stroke, what should you do first?',
+        'answers': [
+          'Move to a cooler place and drink water slowly',
+          'Sit in the sun to cool off',
+          'Apply ice directly to the skin'
+        ],
+        'correctAnswer': 0
+      },
+      {
+        'question':
+            'If someone is experiencing an electric shock, what should you do?',
+        'answers': [
+          'Continue CPR until help arrives',
+          'Immediately touch the person to check for injuries',
+          'Remove them from the source of the electric shock if safe to do so'
+        ],
+        'correctAnswer': 2
+      },
+      {
+        'question': 'What should you do if you encounter a medical emergency?',
+        'answers': [
+          'Call campus security or an ambulance right away',
+          'Ignore the situation and wait for it to resolve',
+          'Tell the person to walk it off'
+        ],
+        'correctAnswer': 0
+      },
+      {
+        'question': 'What is the correct procedure for CPR?',
+        'answers': [
+          'Perform chest compressions only',
+          'Tap the person and shout to check for responsiveness, then start chest compressions',
+          'Leave the person until professional help arrives'
+        ],
+        'correctAnswer': 1
+      },
+      {
+        'question': 'What is the first aid step if someone is bleeding?',
+        'answers': [
+          'Apply pressure with a clean cloth to the wound',
+          'Wait for the bleeding to stop on its own',
+          'Clean the wound with alcohol immediately'
+        ],
+        'correctAnswer': 0
+      },
+      {
+        'question': 'What should you do if someone has a fracture?',
+        'answers': [
+          'Try to move the person to safety',
+          'Immobilize the injured area and avoid moving it',
+          'Let them walk it off'
+        ],
+        'correctAnswer': 1
+      },
+      {
+        'question':
+            'If you encounter a choking person, what should you do first?',
+        'answers': [
+          'Perform abdominal thrusts and back blows',
+          'Leave them and call for help',
+          'Force them to drink water'
+        ],
+        'correctAnswer': 0
+      },
+      {
+        'question': 'What is the first step in providing first aid treatment?',
+        'answers': [
+          'Ensure the scene is safe before assisting',
+          'Apply first aid without checking the environment',
+          'Call for help and wait for professionals'
+        ],
+        'correctAnswer': 0
+      },
+      {
+        'question': 'What should you do if someone experiences burns?',
+        'answers': [
+          'Apply ice directly to the burn',
+          'Cool the burn under running water for at least 10 minutes',
+          'Wrap the burn in a blanket'
+        ],
+        'correctAnswer': 1
+      },
+      {
+        'question': 'What should you do if someone is in shock?',
+        'answers': [
+          'Lay them down and elevate their legs slightly, unless there\'s an injury',
+          'Keep them standing to maintain blood flow',
+          'Ignore them until they recover'
+        ],
+        'correctAnswer': 0
+      }
+    ],
+    'Environmental & Natural Disasters': [
+      {
+        'question': 'What should you do if you experience flooding?',
+        'answers': [
+          'Wait for the water to recede',
+          'Move to higher ground immediately',
+          'Continue walking through the flooded area'
+        ],
+        'correctAnswer': 1
+      },
+      {
+        'question': 'What is the first thing to do during an earthquake?',
+        'answers': [
+          'Stand in an open area',
+          'Drop to the ground, take cover, and hold on',
+          'Immediately run outside'
+        ],
+        'correctAnswer': 1
+      },
+      {
+        'question':
+            'If you are inside during a building collapse, what should you do?',
+        'answers': [
+          'Leave immediately',
+          'Take cover under sturdy furniture and protect yourself from debris',
+          'Stay in your seat until the shaking stops'
+        ],
+        'correctAnswer': 1
+      },
+      {
+        'question':
+            'If you encounter a chemical spill, what should you do first?',
+        'answers': [
+          'Evacuate the area and avoid inhaling fumes',
+          'Stay in the area to help clean up',
+          'Continue working and ignore the spill'
+        ],
+        'correctAnswer': 0
+      },
+      {
+        'question': 'What should you do during an earthquake if you’re inside?',
+        'answers': [
+          'Hide under a desk and stay away from windows',
+          'Run outside immediately',
+          'Stay in bed and wait for the shaking to stop'
+        ],
+        'correctAnswer': 0
+      },
+      {
+        'question': 'If trapped in a collapsed building, what should you do?',
+        'answers': [
+          'Keep quiet and wait for rescuers to find you',
+          'Make noise to alert rescuers and avoid unnecessary movement',
+          'Leave the building as soon as possible'
+        ],
+        'correctAnswer': 1
+      },
+      {
+        'question': 'What should you do if there is a flood?',
+        'answers': [
+          'Shut off the power if safe to do so',
+          'Swim through the flooded area to reach safety',
+          'Stay in the flooded area to observe the situation'
+        ],
+        'correctAnswer': 0
+      },
+      {
+        'question': 'What should you do after an earthquake?',
+        'answers': [
+          'Leave the area immediately',
+          'Wait for instructions from authorities',
+          'Check for injuries and assess the situation'
+        ],
+        'correctAnswer': 2
+      },
+      {
+        'question':
+            'What should you do during a building collapse if you’re inside?',
+        'answers': [
+          'Find a sturdy place to hide and protect yourself from debris',
+          'Attempt to escape the building immediately',
+          'Wait for help inside the building without moving'
+        ],
+        'correctAnswer': 0
+      },
+      {
+        'question':
+            'During an earthquake, if you are outdoors, what should you do?',
+        'answers': [
+          'Stay under a tree or a power line',
+          'Drop to the ground and take cover under furniture',
+          'Stay away from buildings, trees, and power lines'
+        ],
+        'correctAnswer': 2
+      },
+    ],
+  };
+
+  void setCategory(String? category) {
+    setState(() {
+      selectedCategory = category;
+      quizQuestions = categories[category] ?? [];
     });
   }
 
-  void _nextQuestionOrFinish() {
-    if (_currentQuestionIndex < widget.questions.length - 1) {
-      setState(() {
-        _currentQuestionIndex++;
-        _showFeedback = false;
-      });
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'Safety Quiz',
+          style: TextStyle(
+            color: Color(0xFF8B0000),
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
+        ),
+        centerTitle: true,
+        elevation: 0,
+        backgroundColor: const Color(0xFFF5E9D4),
+      ),
+      body: selectedCategory == null
+          ? CategorySelectionPage(setCategory: setCategory)
+          : QuizQuestionPage(
+              questions: quizQuestions,
+              category: selectedCategory!,
+              onBackPressed: () {
+                setCategory(null);
+              },
+            ),
+    );
+  }
+}
+
+class CategorySelectionPage extends StatelessWidget {
+  final Function(String?) setCategory;
+
+  CategorySelectionPage({required this.setCategory});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(height: 40),
+          Text(
+            'Select a Topic:',
+            style: TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF8B0000),
+            ),
+          ),
+          SizedBox(height: 10),
+          ...[
+            'Safety & Security',
+            'Health & First Aid',
+            'Environmental & Natural Disasters'
+          ]
+              .map(
+                (category) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10.0),
+                  child: ElevatedButton(
+                    onPressed: () => setCategory(category),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: Size(double.infinity, 60),
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 30, vertical: 30),
+                      textStyle: TextStyle(fontSize: 20),
+                      backgroundColor: const Color(0xFFF5E9D4),
+                      foregroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20)),
+                    ),
+                    child: Text(
+                      category,
+                      style:
+                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              )
+              .toList(),
+          SizedBox(height: 20),
+          Text(
+            'Choose a category to begin the quiz.',
+            style: TextStyle(
+              fontSize: 16,
+              fontStyle: FontStyle.italic,
+              fontWeight: FontWeight.bold,
+              color:
+                  Colors.black54, // Subtle text color for secondary information
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class QuizQuestionPage extends StatefulWidget {
+  final List<Map<String, dynamic>> questions;
+  final String category;
+  final VoidCallback onBackPressed;
+
+  QuizQuestionPage({
+    required this.questions,
+    required this.category,
+    required this.onBackPressed,
+  });
+
+  @override
+  _QuizQuestionPageState createState() => _QuizQuestionPageState();
+}
+
+class _QuizQuestionPageState extends State<QuizQuestionPage> {
+  int currentQuestionIndex = 0;
+  int score = 0;
+  bool isAnswered = false;
+  String resultMessage = '';
+
+  void answerQuestion(int selectedAnswer) {
+    if (isAnswered) return;
+
+    setState(() {
+      isAnswered = true;
+    });
+
+    bool isCorrect = selectedAnswer ==
+        widget.questions[currentQuestionIndex]['correctAnswer'];
+    if (isCorrect) {
+      score++;
+      resultMessage = 'Correct! 🎉';
     } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => QuizResultPage(
-            score: _score,
-            questions: widget.questions,
-            categoryName: widget.categoryName,
+      resultMessage = 'Incorrect! ❌';
+    }
+
+    Future.delayed(Duration(seconds: 1), () {
+      setState(() {
+        currentQuestionIndex++;
+        isAnswered = false;
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (currentQuestionIndex >= widget.questions.length) {
+      return Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                // Celebration message
+                Icon(
+                  Icons.celebration,
+                  size: 80,
+                  color: Colors.amber,
+                ),
+                SizedBox(height: 20),
+                Text(
+                  'Awesome!',
+                  style: TextStyle(
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 20),
+                Text(
+                  'You’ve completed the quiz,\n keep up the good work!',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black54,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 15),
+                Text(
+                  'Your score: $score/${widget.questions.length}',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w500,
+                    color: score == widget.questions.length
+                        ? Colors.green
+                        : Colors.orange,
+                  ),
+                ),
+                SizedBox(height: 20),
+                // Fun motivational quote or message
+                Text(
+                  score == widget.questions.length
+                      ? 'Perfect! You nailed it! 💯'
+                      : 'Great job! You can always improve! ✨',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontStyle: FontStyle.italic,
+                    color: Colors.blueGrey,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 30),
+                // Stylish button to go back to categories
+                ElevatedButton(
+                  onPressed: widget.onBackPressed,
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: Size(300, 50),
+                    padding: EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                    textStyle: TextStyle(fontSize: 18),
+                    backgroundColor: const Color(0xFFF5E9D4),
+                    foregroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.home, color: Colors.black),
+                      SizedBox(width: 8),
+                      Text('Back to Categories'),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 20),
+                // Additional decorative elements
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.star, color: Colors.yellow, size: 24),
+                    SizedBox(width: 5),
+                    Text(
+                      'Thank you for participating!',
+                      style: TextStyle(fontSize: 16, color: Colors.black45),
+                    ),
+                    SizedBox(width: 5),
+                    Icon(Icons.star, color: Colors.yellow, size: 24),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       );
     }
-  }
 
-  @override
-  Widget build(BuildContext context) {
-    final question = widget.questions[_currentQuestionIndex];
-    final totalQuestions = widget.questions.length;
-    final questionNumber = _currentQuestionIndex + 1;
-
+    final question = widget.questions[currentQuestionIndex];
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.categoryName),
-        backgroundColor: const Color(0xFFF5E9D4),
-        centerTitle: true,
-      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Display question progress
-            Text(
-              'Question $questionNumber/$totalQuestions',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[700],
+            Container(
+              padding: EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5E9D4),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.black),
+              ),
+              child: Text(
+                'Question ${currentQuestionIndex + 1}: ${question['question']}',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
               ),
             ),
-            const SizedBox(height: 10),
-            Text(
-              question['question'],
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF8B0000),
-              ),
-            ),
-            const SizedBox(height: 20),
-            for (int i = 0; i < question['options'].length; i++)
-              ElevatedButton(
-                onPressed: _showFeedback
-                    ? null
-                    : () => _checkAnswer(i),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF8B0000),
-                  foregroundColor: Colors.white,
-                ),
-                child: Text(question['options'][i]),
-              ),
-            if (_showFeedback)
-              Padding(
-                padding: const EdgeInsets.only(top: 16.0),
-                child: Text(
-                  _isCorrect
-                      ? 'Correct!'
-                      : 'Wrong! The correct answer is: ${question['options'][question['correct']]}',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: _isCorrect ? Colors.green : Colors.red,
-                  ),
-                ),
-              ),
-            if (_showFeedback)
-              Padding(
-                padding: const EdgeInsets.only(top: 16.0),
+            SizedBox(height: 20),
+            ...List.generate(
+              question['answers'].length,
+              (index) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 5.0),
                 child: ElevatedButton(
-                  onPressed: _nextQuestionOrFinish,
+                  onPressed: () => answerQuestion(index),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF8B0000),
-                    foregroundColor: Colors.white,
+                    minimumSize: Size(double.infinity, 50),
+                    padding: EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                    textStyle: TextStyle(fontSize: 18),
+                    foregroundColor: Colors.black,
+                    backgroundColor: isAnswered
+                        ? (index == question['correctAnswer']
+                            ? Colors.green
+                            : const Color.fromARGB(255, 228, 87, 77))
+                        : const Color.fromARGB(255, 149, 183, 241),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
                   ),
-                  child: Text(
-                    _currentQuestionIndex < widget.questions.length - 1
-                        ? 'Next'
-                        : 'Finish',
-                  ),
+                  child: Text(question['answers'][index]),
                 ),
               ),
+            ),
+            SizedBox(height: 20),
+            if (isAnswered)
+              Text(resultMessage,
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
           ],
         ),
       ),
     );
   }
 }
-
-class QuizResultPage extends StatelessWidget {
-  final int score;
-  final List<Map<String, dynamic>> questions;
-  final String categoryName;
-
-  const QuizResultPage({
-    required this.score,
-    required this.questions,
-    required this.categoryName,
-    super.key,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Quiz Results'),
-        backgroundColor: const Color(0xFFF5E9D4),
-        centerTitle: true,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Card(
-                margin: const EdgeInsets.symmetric(vertical: 10),
-                color: Colors.white,
-                elevation: 5,
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      Text(
-                        'Your Score: $score/${questions.length}',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF8B0000),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Category: $categoryName',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF8B0000),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            Expanded(
-              child: ListView.builder(
-                itemCount: questions.length,
-                itemBuilder: (context, index) {
-                  final question = questions[index];
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: Card(
-                      child: ListTile(
-                        title: Text('${index + 1}. ${question['question']}'),
-                        subtitle: Text(
-                          'Correct Answer: ${question['options'][question['correct']]}',
-                          style: const TextStyle(color: Colors.green),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => QuizPage(
-                        categoryName: categoryName,
-                        questions: questions,
-                      ),
-                    ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF8B0000),
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('Restart Quiz'),
-              ),
-            ),
-
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-void main() => runApp(MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: const SafetyQuizPage(),
-    ));

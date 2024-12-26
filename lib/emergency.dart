@@ -49,7 +49,7 @@ class _SosPageState extends State<SosPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'UTMSafe',
+          'UTMSafe 🎓',
           style: TextStyle(
             color: Color(0xFF8B0000),
             fontWeight: FontWeight.bold,
@@ -90,7 +90,8 @@ class _SosPageState extends State<SosPage> {
               itemBuilder: (context, index) {
                 final contact = _emergencyContacts[index];
                 return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 4.0),
                   child: Card(
                     elevation: 2,
                     child: ListTile(
@@ -106,7 +107,7 @@ class _SosPageState extends State<SosPage> {
               },
             ),
           ),
-          
+
           // Divider Line between Emergency Contact and Safety Tips
           const Divider(
             color: Color(0xFF8B0000), // Divider color
@@ -117,7 +118,8 @@ class _SosPageState extends State<SosPage> {
 
           // Reduced space from the divider line to the next section
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 6.0), // Reduced vertical space
+            padding: const EdgeInsets.symmetric(
+                horizontal: 20.0, vertical: 6.0), // Reduced vertical space
             child: Column(
               children: [
                 const Text(
@@ -144,28 +146,35 @@ class _SosPageState extends State<SosPage> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 2), // Reduced height between the text and the button
+                const SizedBox(
+                    height:
+                        2), // Reduced height between the text and the button
                 const Text(
                   'Think you know how to stay safe? Test your knowledge with this safety quiz!',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 15),
                 ),
-                const SizedBox(height: 10), // Adjusted height to bring the button closer
+                const SizedBox(
+                    height: 10), // Adjusted height to bring the button closer
                 ElevatedButton(
                   onPressed: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => SafetyQuizPage(), // Navigate to the quiz page
+                        builder: (context) =>
+                            QuizPage(), // Navigate to the quiz page
                       ),
                     );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFF8B0000), // Background color
                     foregroundColor: Colors.white, // Text color
-                    padding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 24.0), // Padding inside the button
+                    padding: EdgeInsets.symmetric(
+                        vertical: 12.0,
+                        horizontal: 24.0), // Padding inside the button
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0), // Rounded corners
+                      borderRadius:
+                          BorderRadius.circular(8.0), // Rounded corners
                     ),
                   ),
                   child: const Text(
