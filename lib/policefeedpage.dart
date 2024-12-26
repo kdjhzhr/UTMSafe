@@ -387,9 +387,8 @@ class _PoliceInterfaceState extends State<PoliceInterface> {
                                         ),
                                         StreamBuilder<QuerySnapshot>(
                                           stream: _firestore
-                                              .collection('posts')
-                                              .doc(post.id)
-                                              .collection('comments')
+                                              .collection('posts').doc(post.id)
+                                              .collection('comments').orderBy('timestamp', descending: true)
                                               .snapshots(),
                                           builder: (context, snapshot) {
                                             if (snapshot.connectionState ==
@@ -410,7 +409,7 @@ class _PoliceInterfaceState extends State<PoliceInterface> {
                                   stream: _firestore
                                       .collection('posts')
                                       .doc(post.id)
-                                      .collection('comments')
+                                      .collection('comments').orderBy('timestamp', descending: true)
                                       .snapshots(),
                                   builder: (context, snapshot) {
                                     if (snapshot.connectionState ==
