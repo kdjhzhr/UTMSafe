@@ -19,6 +19,7 @@ class _PoliceInterfaceState extends State<PoliceInterface> {
 
   String? _username;
 
+
   @override
   void initState() {
     super.initState();
@@ -118,8 +119,13 @@ class _PoliceInterfaceState extends State<PoliceInterface> {
     }
   }
 
-  Future<void> _addComment(String postId, String comment) async {
-    try {
+Future<void> _addComment(String postId, String comment) async {
+  try {
+    final uid = _auth.currentUser?.uid;
+    if (uid != null) {
+      final userDoc = await _firestore.collection('users').doc(uid).get();
+      final role = userDoc.data()?['role'] ?? 'student';  // Fetch the user's role
+
       await _firestore
           .collection('posts')
           .doc(postId)
@@ -128,11 +134,13 @@ class _PoliceInterfaceState extends State<PoliceInterface> {
         'comment': comment,
         'userName': _username ?? 'Unknown',
         'timestamp': FieldValue.serverTimestamp(),
+        'role': role,  // Store the user's role in the comment
       });
-    } catch (e) {
-      print("Error adding comment: $e");
     }
+  } catch (e) {
+    print("Error adding comment: $e");
   }
+}
 
   void _showAddCommentDialog(String postId) {
     final commentController = TextEditingController();
@@ -304,7 +312,7 @@ class _PoliceInterfaceState extends State<PoliceInterface> {
                                     CircleAvatar(
                                       radius: 20,
                                       backgroundColor: Colors.grey[300],
-                                      child: const Icon(Icons.person, color: Colors.grey),
+                                      child: const Icon(Icons.school, color: Colors.black),
                                     ),
                                     const SizedBox(width: 8),
                                     GestureDetector(
@@ -362,16 +370,12 @@ class _PoliceInterfaceState extends State<PoliceInterface> {
                                         ),
                                         StreamBuilder<QuerySnapshot>(
                                           stream: _firestore
-                                              .collection('posts')
-                                              .doc(post.id)
-                                              .collection('comments')
-                                              .snapshots(),
+                                              .collection('posts').doc(post.id).collection('comments').snapshots(),
                                           builder: (context, snapshot) {
                                             if (snapshot.connectionState == ConnectionState.waiting) {
                                               return const CircularProgressIndicator();
                                             }
-                                            final commentsCount =
-                                                snapshot.data?.docs.length ?? 0;
+                                            final commentsCount = snapshot.data?.docs.length ?? 0;
                                             return Text('$commentsCount');
                                           },
                                         ),
@@ -382,10 +386,7 @@ class _PoliceInterfaceState extends State<PoliceInterface> {
                                 // View comments dropdown
                                 StreamBuilder<QuerySnapshot>(
                                   stream: _firestore
-                                      .collection('posts')
-                                      .doc(post.id)
-                                      .collection('comments')
-                                      .snapshots(),
+                                      .collection('posts').doc(post.id).collection('comments').snapshots(),
                                   builder: (context, snapshot) {
                                     if (snapshot.connectionState == ConnectionState.waiting) {
                                       return const CircularProgressIndicator();
@@ -401,29 +402,28 @@ class _PoliceInterfaceState extends State<PoliceInterface> {
                                                 shrinkWrap: true,
                                                 itemCount: commentsCount,
                                                 itemBuilder: (context, index) {
-                                                  final commentData = snapshot.data!.docs[index].data()
-                                                      as Map<String, dynamic>;
+                                                  final commentData = snapshot.data!.docs[index].data() as Map<String, dynamic>;
                                                   final commentText = commentData['comment'] ?? '';
                                                   final userName = commentData['userName'] ?? 'Unknown';
                                                   final timestamp = commentData['timestamp'] as Timestamp?;
-                                                  final formattedTime = timestamp != null
-                                                      ? _formatTimestamp(timestamp)
-                                                      : 'Unknown time';
+                                                  final formattedTime = timestamp != null ? _formatTimestamp(timestamp) : 'Unknown time';
+                                                  final userRole = commentData['role'] ?? 'student';  // Default to 'student' if role is missing
 
                                                   return ListTile(
-                                                    contentPadding: const EdgeInsets.symmetric(
-                                                        vertical: 8, horizontal: 16),
+                                                    contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                                                     leading: CircleAvatar(
                                                       radius: 20,
                                                       backgroundColor: Colors.grey[300],
-                                                      child: const Icon(Icons.person, color: Colors.grey),
+                                                      child: Icon(
+                                                        userRole == 'auxiliary_police' ? Icons.security : Icons.school,  // Display correct icon based on role
+                                                        color: Colors.black,
+                                                      ),
                                                     ),
                                                     title: Row(
                                                       children: [
                                                         Text(
                                                           userName,
-                                                          style: const TextStyle(
-                                                              fontSize: 16, fontWeight: FontWeight.bold),
+                                                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                                                         ),
                                                         const SizedBox(width: 8),
                                                         Text(
