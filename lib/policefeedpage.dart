@@ -19,7 +19,6 @@ class _PoliceInterfaceState extends State<PoliceInterface> {
 
   String? _username;
 
-
   @override
   void initState() {
     super.initState();
@@ -119,28 +118,29 @@ class _PoliceInterfaceState extends State<PoliceInterface> {
     }
   }
 
-Future<void> _addComment(String postId, String comment) async {
-  try {
-    final uid = _auth.currentUser?.uid;
-    if (uid != null) {
-      final userDoc = await _firestore.collection('users').doc(uid).get();
-      final role = userDoc.data()?['role'] ?? 'student';  // Fetch the user's role
+  Future<void> _addComment(String postId, String comment) async {
+    try {
+      final uid = _auth.currentUser?.uid;
+      if (uid != null) {
+        final userDoc = await _firestore.collection('users').doc(uid).get();
+        final role =
+            userDoc.data()?['role'] ?? 'student'; // Fetch the user's role
 
-      await _firestore
-          .collection('posts')
-          .doc(postId)
-          .collection('comments')
-          .add({
-        'comment': comment,
-        'userName': _username ?? 'Unknown',
-        'timestamp': FieldValue.serverTimestamp(),
-        'role': role,  // Store the user's role in the comment
-      });
+        await _firestore
+            .collection('posts')
+            .doc(postId)
+            .collection('comments')
+            .add({
+          'comment': comment,
+          'userName': _username ?? 'Unknown',
+          'timestamp': FieldValue.serverTimestamp(),
+          'role': role, // Store the user's role in the comment
+        });
+      }
+    } catch (e) {
+      print("Error adding comment: $e");
     }
-  } catch (e) {
-    print("Error adding comment: $e");
   }
-}
 
   void _showAddCommentDialog(String postId) {
     final commentController = TextEditingController();
@@ -181,7 +181,7 @@ Future<void> _addComment(String postId, String comment) async {
     final dateTime = timestamp.toDate();
     return DateFormat('dd/MM/yyyy HH:mm').format(dateTime);
   }
-  
+
   String _getCategoryEmoji(String category) {
     switch (category.toLowerCase()) {
       case 'fire emergency':
@@ -214,7 +214,7 @@ Future<void> _addComment(String postId, String comment) async {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'UTMSafe 🚔',
+          'UTMSafe 🛡️',
           style: TextStyle(
             color: Color(0xFF8B0000),
             fontWeight: FontWeight.bold,
@@ -239,12 +239,15 @@ Future<void> _addComment(String postId, String comment) async {
                       actions: <Widget>[
                         TextButton(
                           onPressed: () {
-                            Navigator.of(context).pop(false); // User cancels logout
+                            Navigator.of(context)
+                                .pop(false); // User cancels logout
                           },
                           child: const Text('Cancel'),
                         ),
                         TextButton(
-                          onPressed: () {Navigator.of(context).pop(true); // User confirms logout
+                          onPressed: () {
+                            Navigator.of(context)
+                                .pop(true); // User confirms logout
                           },
                           child: const Text('Logout'),
                         ),
@@ -258,7 +261,10 @@ Future<void> _addComment(String postId, String comment) async {
                   try {
                     await _auth.signOut();
                     Navigator.pushNamedAndRemoveUntil(
-                        context, '/', (route) => false); // Navigate to home screen after logout
+                        context,
+                        '/',
+                        (route) =>
+                            false); // Navigate to home screen after logout
                   } catch (e) {
                     print("Error during logout: $e");
                   }
@@ -300,7 +306,8 @@ Future<void> _addComment(String postId, String comment) async {
                       (context, index) {
                         final post = posts[index];
                         return Card(
-                          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                          margin: const EdgeInsets.symmetric(
+                              vertical: 8, horizontal: 16),
                           child: Padding(
                             padding: const EdgeInsets.all(8.0),
                             child: Column(
@@ -312,20 +319,25 @@ Future<void> _addComment(String postId, String comment) async {
                                     CircleAvatar(
                                       radius: 20,
                                       backgroundColor: Colors.grey[300],
-                                      child: const Icon(Icons.school, color: Colors.black),
+                                      child: const Icon(Icons.school,
+                                          color: Colors.black),
                                     ),
                                     const SizedBox(width: 8),
                                     GestureDetector(
-                                      onTap: () => _showUserDetailsDialog(post.name),
+                                      onTap: () =>
+                                          _showUserDetailsDialog(post.name),
                                       child: Text(
                                         post.name,
-                                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                        style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold),
                                       ),
                                     ),
                                     const Spacer(),
                                     Text(
                                       _formatTimestamp(post.timestamp),
-                                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                      style: const TextStyle(
+                                          fontSize: 12, color: Colors.grey),
                                     ),
                                   ],
                                 ),
@@ -336,7 +348,8 @@ Future<void> _addComment(String postId, String comment) async {
                                     child: Row(
                                       children: [
                                         Text(
-                                          _getCategoryEmoji(post.category!) + ' ',
+                                          _getCategoryEmoji(post.category!) +
+                                              ' ',
                                           style: const TextStyle(fontSize: 18),
                                         ),
                                         Text(
@@ -357,25 +370,34 @@ Future<void> _addComment(String postId, String comment) async {
                                 Row(
                                   children: [
                                     IconButton(
-                                      icon: const Icon(Icons.favorite_border, color: Colors.red),
-                                      onPressed: () => _likePost(post.id, post.likes),
+                                      icon: const Icon(Icons.favorite_border,
+                                          color: Colors.red),
+                                      onPressed: () =>
+                                          _likePost(post.id, post.likes),
                                     ),
                                     Text(post.likes.toString()),
                                     const SizedBox(width: 16),
                                     Row(
                                       children: [
                                         IconButton(
-                                          icon: const Icon(Icons.comment, color: Colors.grey),
-                                          onPressed: () => _showAddCommentDialog(post.id),
+                                          icon: const Icon(Icons.comment,
+                                              color: Colors.grey),
+                                          onPressed: () =>
+                                              _showAddCommentDialog(post.id),
                                         ),
                                         StreamBuilder<QuerySnapshot>(
                                           stream: _firestore
-                                              .collection('posts').doc(post.id).collection('comments').snapshots(),
+                                              .collection('posts')
+                                              .doc(post.id)
+                                              .collection('comments')
+                                              .snapshots(),
                                           builder: (context, snapshot) {
-                                            if (snapshot.connectionState == ConnectionState.waiting) {
+                                            if (snapshot.connectionState ==
+                                                ConnectionState.waiting) {
                                               return const CircularProgressIndicator();
                                             }
-                                            final commentsCount = snapshot.data?.docs.length ?? 0;
+                                            final commentsCount =
+                                                snapshot.data?.docs.length ?? 0;
                                             return Text('$commentsCount');
                                           },
                                         ),
@@ -386,13 +408,18 @@ Future<void> _addComment(String postId, String comment) async {
                                 // View comments dropdown
                                 StreamBuilder<QuerySnapshot>(
                                   stream: _firestore
-                                      .collection('posts').doc(post.id).collection('comments').snapshots(),
+                                      .collection('posts')
+                                      .doc(post.id)
+                                      .collection('comments')
+                                      .snapshots(),
                                   builder: (context, snapshot) {
-                                    if (snapshot.connectionState == ConnectionState.waiting) {
+                                    if (snapshot.connectionState ==
+                                        ConnectionState.waiting) {
                                       return const CircularProgressIndicator();
                                     }
 
-                                    final commentsCount = snapshot.data?.docs.length ?? 0;
+                                    final commentsCount =
+                                        snapshot.data?.docs.length ?? 0;
 
                                     return commentsCount > 0
                                         ? ExpansionTile(
@@ -402,20 +429,44 @@ Future<void> _addComment(String postId, String comment) async {
                                                 shrinkWrap: true,
                                                 itemCount: commentsCount,
                                                 itemBuilder: (context, index) {
-                                                  final commentData = snapshot.data!.docs[index].data() as Map<String, dynamic>;
-                                                  final commentText = commentData['comment'] ?? '';
-                                                  final userName = commentData['userName'] ?? 'Unknown';
-                                                  final timestamp = commentData['timestamp'] as Timestamp?;
-                                                  final formattedTime = timestamp != null ? _formatTimestamp(timestamp) : 'Unknown time';
-                                                  final userRole = commentData['role'] ?? 'student';  // Default to 'student' if role is missing
+                                                  final commentData = snapshot
+                                                          .data!.docs[index]
+                                                          .data()
+                                                      as Map<String, dynamic>;
+                                                  final commentText =
+                                                      commentData['comment'] ??
+                                                          '';
+                                                  final userName =
+                                                      commentData['userName'] ??
+                                                          'Unknown';
+                                                  final timestamp =
+                                                      commentData['timestamp']
+                                                          as Timestamp?;
+                                                  final formattedTime =
+                                                      timestamp != null
+                                                          ? _formatTimestamp(
+                                                              timestamp)
+                                                          : 'Unknown time';
+                                                  final userRole = commentData[
+                                                          'role'] ??
+                                                      'student'; // Default to 'student' if role is missing
 
                                                   return ListTile(
-                                                    contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                                                    contentPadding:
+                                                        const EdgeInsets
+                                                            .symmetric(
+                                                            vertical: 8,
+                                                            horizontal: 16),
                                                     leading: CircleAvatar(
                                                       radius: 20,
-                                                      backgroundColor: Colors.grey[300],
+                                                      backgroundColor:
+                                                          Colors.grey[300],
                                                       child: Icon(
-                                                        userRole == 'auxiliary_police' ? Icons.security : Icons.school,  // Display correct icon based on role
+                                                        userRole ==
+                                                                'auxiliary_police'
+                                                            ? Icons.security
+                                                            : Icons
+                                                                .school, // Display correct icon based on role
                                                         color: Colors.black,
                                                       ),
                                                     ),
@@ -423,12 +474,21 @@ Future<void> _addComment(String postId, String comment) async {
                                                       children: [
                                                         Text(
                                                           userName,
-                                                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                                          style: const TextStyle(
+                                                              fontSize: 16,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold),
                                                         ),
-                                                        const SizedBox(width: 8),
+                                                        const SizedBox(
+                                                            width: 8),
                                                         Text(
                                                           formattedTime,
-                                                          style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                                          style:
+                                                              const TextStyle(
+                                                                  fontSize: 12,
+                                                                  color: Colors
+                                                                      .grey),
                                                         ),
                                                       ],
                                                     ),
@@ -457,7 +517,6 @@ Future<void> _addComment(String postId, String comment) async {
           const Report(),
         ],
       ),
-
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: const Color(0xFFF5E9D4),
         currentIndex: _selectedIndex,
