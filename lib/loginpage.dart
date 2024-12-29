@@ -79,7 +79,6 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 const SizedBox(height: 16),
-
                 // Password text field
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -129,7 +128,6 @@ class _LoginPageState extends State<LoginPage> {
                     style: TextStyle(fontSize: 15, color: Colors.grey),
                   ),
                 ),
-
                 // Login button
                 ElevatedButton(
                   onPressed: _handleLogin,

@@ -53,9 +53,8 @@ class _WelcomePageState extends State<WelcomePage> {
             children: [
               // Animated Logo with fade out effect
               AnimatedOpacity(
-                opacity: _isVisible ? 1.0 : 0.0, // Fading effect
-                duration:
-                    const Duration(milliseconds: 500), // Fade out duration
+                opacity: _isVisible ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 500),
                 child: Image.asset(
                   'assets/utmsafelogo.png',
                   width: 200,
@@ -66,9 +65,8 @@ class _WelcomePageState extends State<WelcomePage> {
 
               // Animated Text with fade out effect
               AnimatedOpacity(
-                opacity: _isVisible ? 1.0 : 0.0, // Fading effect for text
-                duration:
-                    const Duration(milliseconds: 500), // Fade out duration
+                opacity: _isVisible ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 500),
                 child: const Text(
                   'Your Safety is Our Priority',
                   style: TextStyle(
