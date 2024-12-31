@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'commonincident.dart';
 
 class Report extends StatefulWidget {
   const Report({super.key});
@@ -360,51 +361,63 @@ class _ReportState extends State<Report> {
     );
   }
 
-  Widget _buildAlertBanner(String category, int count) {
-    Color bannerColor = count > 0 ? Colors.blue.shade100 : Colors.grey.shade200;
-    IconData icon = count > 0 ? Icons.warning_outlined : Icons.info_outline;
-    Color iconColor = count > 0 ? Colors.yellow : Colors.grey;
+  Widget _buildAlertBanner(String category, int count) {  
+    Color bannerColor = count > 0 ? Colors.blue.shade100 : Colors.grey.shade200;  
+    IconData icon = count > 0 ? Icons.warning_outlined : Icons.info_outline;  
+    Color iconColor = count > 0 ? Colors.yellow : Colors.grey;  
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12.0),
-      decoration: BoxDecoration(
-        color: bannerColor,
-        borderRadius: BorderRadius.circular(8.0),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: iconColor),
-          const SizedBox(width: 12),
-          Expanded(
-            child: RichText(
-              text: TextSpan(
-                style: const TextStyle(color: Colors.black87),
-                children: [
-                  const TextSpan(
-                    text: 'Most Common Incident This Week: ',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  TextSpan(
-                    text: category,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: count > 0 ? Colors.red : Colors.grey,
-                    ),
-                  ),
-                  if (count > 0)
-                    TextSpan(
-                      text: ' (Count: $count)',
-                      style: const TextStyle(
-                          color: Color.fromARGB(255, 48, 47, 47)),
-                    ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+    return GestureDetector(  
+      onTap: count > 0   
+        ? () {  
+            Navigator.push(  
+              context,  
+              MaterialPageRoute(  
+                builder: (context) => FilteredPostsPage(category: category),  
+              ),  
+            );  
+          }  
+        : null,  
+      child: Container(  
+        width: double.infinity,  
+        padding: const EdgeInsets.all(12.0),  
+        decoration: BoxDecoration(  
+          color: bannerColor,  
+          borderRadius: BorderRadius.circular(8.0),  
+        ),  
+        child: Row(  
+          children: [  
+            Icon(icon, color: iconColor),  
+            const SizedBox(width: 12),  
+            Expanded(  
+              child: RichText(  
+                text: TextSpan(  
+                  style: const TextStyle(color: Colors.black87),  
+                  children: [  
+                    const TextSpan(  
+                      text: 'Most Common Incident This Week: ',  
+                      style: TextStyle(fontWeight: FontWeight.bold),  
+                    ),  
+                    TextSpan(  
+                      text: category,  
+                      style: TextStyle(  
+                        fontWeight: FontWeight.bold,  
+                        color: count > 0 ? Colors.red : Colors.grey,  
+                      ),  
+                    ),  
+                    if (count > 0)  
+                      TextSpan(  
+                        text: ' (Count: $count)',  
+                        style: const TextStyle(  
+                            color: Color.fromARGB(255, 48, 47, 47)),  
+                      ),  
+                  ],  
+                ),  
+              ),  
+            ),  
+          ],  
+        ),  
+      ),  
+    );  
   }
 
   Widget _buildBarChartIncidentPost(List<int> data, DateTime now) {
