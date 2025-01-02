@@ -78,35 +78,51 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   // Helper method for the password field with visibility toggle
+// Helper method for the password field with visibility toggle and instructions
   Widget _buildPasswordField(String label, TextEditingController controller) {
-    return TextField(
-      controller: controller,
-      obscureText: !passwordVisible,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: const Icon(
-          Icons.lock,
-          color: Color(0xFF8B0000),
-        ),
-        suffixIcon: IconButton(
-          icon: Icon(
-            passwordVisible ? Icons.visibility : Icons.visibility_off,
-            color: const Color(0xFF8B0000),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextField(
+          controller: controller,
+          obscureText: !passwordVisible,
+          decoration: InputDecoration(
+            labelText: label,
+            prefixIcon: const Icon(
+              Icons.lock,
+              color: Color(0xFF8B0000),
+            ),
+            suffixIcon: IconButton(
+              icon: Icon(
+                passwordVisible ? Icons.visibility : Icons.visibility_off,
+                color: const Color(0xFF8B0000),
+              ),
+              onPressed: () {
+                setState(() {
+                  passwordVisible = !passwordVisible;
+                });
+              },
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFF8B0000)),
+            ),
           ),
-          onPressed: () {
-            setState(() {
-              passwordVisible = !passwordVisible;
-            });
-          },
         ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+        const SizedBox(height: 8),
+        Center(
+          child: Text(
+            'Password must be at least 6 characters long.',
+            style: TextStyle(
+              fontSize: 15,
+              color: Colors.grey,
+            ),
+          ),
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF8B0000)),
-        ),
-      ),
+      ],
     );
   }
 
