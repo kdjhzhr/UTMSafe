@@ -109,12 +109,43 @@ class _PoliceInterfaceState extends State<PoliceInterface> {
   }
 
   Future<void> _likePost(String postId, int currentLikes) async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+
+    if (userId == null) {
+      print("User not logged in");
+      return;
+    }
+    final postRef = _firestore.collection('posts').doc(postId);
+
     try {
-      await _firestore.collection('posts').doc(postId).update({
-        'likes': currentLikes + 1,
+      await _firestore.runTransaction((transaction) async {
+        final postSnapshot = await transaction.get(postRef);
+
+        if (!postSnapshot.exists) {
+          print("Post does not exist");
+          return;
+        }
+        bool isLiked = postSnapshot.data()?['likedUsers']?.contains(userId) ?? false;
+        int updatedLikes = currentLikes;
+
+        if (isLiked) {
+          // Unlike the post
+          updatedLikes--;
+          transaction.update(postRef, {
+            'likes': updatedLikes,
+            'likedUsers': FieldValue.arrayRemove([userId]),
+          });
+        } else {
+          // Like the post
+          updatedLikes++;
+          transaction.update(postRef, {
+            'likes': updatedLikes,
+            'likedUsers': FieldValue.arrayUnion([userId]),
+          });
+        }
       });
     } catch (e) {
-      print("Error liking post: $e");
+      print("Error toggling like: $e");
     }
   }
 
@@ -164,8 +195,7 @@ class _PoliceInterfaceState extends State<PoliceInterface> {
             TextButton(
               onPressed: () {
                 final comment = commentController.text.trim();
-                if (comment.isNotEmpty) {
-                  _addComment(postId, comment);
+                if (comment.isNotEmpty) { _addComment(postId, comment);
                 }
                 Navigator.pop(context);
               },
@@ -239,15 +269,13 @@ class _PoliceInterfaceState extends State<PoliceInterface> {
                       actions: <Widget>[
                         TextButton(
                           onPressed: () {
-                            Navigator.of(context)
-                                .pop(false); // User cancels logout
+                            Navigator.of(context).pop(false); // User cancels logout
                           },
                           child: const Text('Cancel'),
                         ),
                         TextButton(
                           onPressed: () {
-                            Navigator.of(context)
-                                .pop(true); // User confirms logout
+                            Navigator.of(context).pop(true); // User confirms logout
                           },
                           child: const Text('Logout'),
                         ),
@@ -261,10 +289,7 @@ class _PoliceInterfaceState extends State<PoliceInterface> {
                   try {
                     await _auth.signOut();
                     Navigator.pushNamedAndRemoveUntil(
-                        context,
-                        '/',
-                        (route) =>
-                            false); // Navigate to home screen after logout
+                        context, '/', (route) => false); // Navigate to home screen after logout
                   } catch (e) {
                     print("Error during logout: $e");
                   }
@@ -283,7 +308,7 @@ class _PoliceInterfaceState extends State<PoliceInterface> {
                 floating: false,
                 expandedHeight: 150.0,
                 flexibleSpace: FlexibleSpaceBar(
-                  background: SafetyBanner(), // Your banner widget
+                background: SafetyBanner(), 
                 ),
               ),
               StreamBuilder<List<Post>>(
@@ -316,28 +341,19 @@ class _PoliceInterfaceState extends State<PoliceInterface> {
                                 // User details row (username and timestamp)
                                 Row(
                                   children: [
-                                    CircleAvatar(
-                                      radius: 20,
-                                      backgroundColor: Colors.grey[300],
-                                      child: const Icon(Icons.school,
-                                          color: Colors.black),
+                                    CircleAvatar(radius: 20, backgroundColor: Colors.grey[300],
+                                      child: const Icon(Icons.school, color: Colors.black),
                                     ),
                                     const SizedBox(width: 8),
                                     GestureDetector(
-                                      onTap: () =>
-                                          _showUserDetailsDialog(post.name),
-                                      child: Text(
-                                        post.name,
-                                        style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold),
+                                      onTap: () => _showUserDetailsDialog(post.name),
+                                      child: Text(post.name,
+                                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                                       ),
                                     ),
                                     const Spacer(),
-                                    Text(
-                                      _formatTimestamp(post.timestamp),
-                                      style: const TextStyle(
-                                          fontSize: 12, color: Colors.grey),
+                                    Text(_formatTimestamp(post.timestamp),
+                                      style: const TextStyle(fontSize: 12, color: Colors.grey),
                                     ),
                                   ],
                                 ),
@@ -352,11 +368,8 @@ class _PoliceInterfaceState extends State<PoliceInterface> {
                                               ' ',
                                           style: const TextStyle(fontSize: 18),
                                         ),
-                                        Text(
-                                          '${post.category}',
-                                          style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              color: Color(0xFF8B0000)),
+                                        Text('${post.category}',
+                                          style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF8B0000)),
                                         ),
                                       ],
                                     ),
@@ -367,43 +380,55 @@ class _PoliceInterfaceState extends State<PoliceInterface> {
                                     padding: const EdgeInsets.only(top: 8.0),
                                     child: Image.network(post.photoUrl!),
                                   ),
-                                Row(
-                                  children: [
-                                    IconButton(
-                                      icon: const Icon(Icons.favorite_border,
-                                          color: Colors.red),
-                                      onPressed: () =>
-                                          _likePost(post.id, post.likes),
-                                    ),
-                                    Text(post.likes.toString()),
-                                    const SizedBox(width: 16),
-                                    Row(
-                                      children: [
-                                        IconButton(
-                                          icon: const Icon(Icons.comment,
-                                              color: Colors.grey),
-                                          onPressed: () =>
-                                              _showAddCommentDialog(post.id),
+                                StreamBuilder<DocumentSnapshot>(
+                                stream: _firestore.collection('posts').doc(post.id).snapshots(),
+                                  builder: (context, snapshot) {
+                                    if (!snapshot.hasData) {
+                                      return const Row(
+                                        children: [
+                                          IconButton(
+                                            icon: Icon(Icons.favorite_border, color: Colors.grey),
+                                            onPressed: null,
+                                          ),
+                                           Text("0"),
+                                        ],
+                                      );
+                                    }
+                                  final data = snapshot.data!.data() as Map<String, dynamic>;
+                                  final likesCount = data['likes'] ?? 0;
+                                  final userId = FirebaseAuth.instance.currentUser?.uid;
+                                  final isLiked = data['likedUsers']?.contains(userId) ?? false;
+
+                                  return Row(
+                                    children: [
+                                      IconButton(
+                                        icon: Icon(
+                                          isLiked ? Icons.favorite : Icons.favorite_border,
+                                          color: isLiked ? Colors.red : Colors.grey,
                                         ),
-                                        StreamBuilder<QuerySnapshot>(
-                                          stream: _firestore
-                                              .collection('posts').doc(post.id)
-                                              .collection('comments').orderBy('timestamp', descending: true)
-                                              .snapshots(),
-                                          builder: (context, snapshot) {
-                                            if (snapshot.connectionState ==
-                                                ConnectionState.waiting) {
-                                              return const CircularProgressIndicator();
-                                            }
-                                            final commentsCount =
-                                                snapshot.data?.docs.length ?? 0;
-                                            return Text('$commentsCount');
-                                          },
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
+                                        onPressed: () => _likePost(post.id, likesCount),
+                                      ),
+                                      Text(likesCount.toString()),
+                                      const SizedBox(width: 16),
+                                      IconButton(
+                                        icon: const Icon(Icons.comment, color: Colors.grey),
+                                        onPressed: () => _showAddCommentDialog(post.id),
+                                      ),
+                                      StreamBuilder<QuerySnapshot>(
+                                        stream: _firestore
+                                            .collection('posts').doc(post.id).collection('comments').snapshots(),
+                                        builder: (context, snapshot) {
+                                          if (snapshot.connectionState == ConnectionState.waiting) {
+                                            return const CircularProgressIndicator();
+                                          }
+                                          final commentsCount = snapshot.data?.docs.length ?? 0;
+                                          return Text('$commentsCount');
+                                        },
+                                      ),
+                                    ],
+                                  );
+                                },
+                              ),
                                 // View comments dropdown
                                 StreamBuilder<QuerySnapshot>(
                                   stream: _firestore
@@ -412,82 +437,41 @@ class _PoliceInterfaceState extends State<PoliceInterface> {
                                       .collection('comments').orderBy('timestamp', descending: true)
                                       .snapshots(),
                                   builder: (context, snapshot) {
-                                    if (snapshot.connectionState ==
-                                        ConnectionState.waiting) {
+                                    if (snapshot.connectionState == ConnectionState.waiting) {
                                       return const CircularProgressIndicator();
                                     }
-
-                                    final commentsCount =
-                                        snapshot.data?.docs.length ?? 0;
+                                    final commentsCount = snapshot.data?.docs.length ?? 0;
 
                                     return commentsCount > 0
                                         ? ExpansionTile(
                                             title: const Text('View Comments'),
                                             children: [
-                                              ListView.builder(
-                                                shrinkWrap: true,
-                                                itemCount: commentsCount,
+                                              ListView.builder(shrinkWrap: true, itemCount: commentsCount,
                                                 itemBuilder: (context, index) {
-                                                  final commentData = snapshot
-                                                          .data!.docs[index]
-                                                          .data()
-                                                      as Map<String, dynamic>;
-                                                  final commentText =
-                                                      commentData['comment'] ??
-                                                          '';
-                                                  final userName =
-                                                      commentData['userName'] ??
-                                                          'Unknown';
-                                                  final timestamp =
-                                                      commentData['timestamp']
-                                                          as Timestamp?;
-                                                  final formattedTime =
-                                                      timestamp != null
-                                                          ? _formatTimestamp(
-                                                              timestamp)
-                                                          : 'Unknown time';
-                                                  final userRole = commentData[
-                                                          'role'] ??
-                                                      'student'; // Default to 'student' if role is missing
+                                                  final commentData = snapshot .data!.docs[index] .data() as Map<String, dynamic>;
+                                                  final commentText = commentData['comment'] ?? '';
+                                                  final userName = commentData['userName'] ?? 'Unknown';
+                                                  final timestamp = commentData['timestamp'] as Timestamp?;
+                                                  final formattedTime = timestamp != null ? _formatTimestamp(timestamp) : 'Unknown time';
+                                                  final userRole = commentData['role'] ?? 'student'; // Default to 'student' if role is missing
 
                                                   return ListTile(
                                                     contentPadding:
-                                                        const EdgeInsets
-                                                            .symmetric(
-                                                            vertical: 8,
-                                                            horizontal: 16),
-                                                    leading: CircleAvatar(
-                                                      radius: 20,
-                                                      backgroundColor:
-                                                          Colors.grey[300],
+                                                        const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                                                    leading: CircleAvatar(radius: 20, backgroundColor: Colors.grey[300],
                                                       child: Icon(
-                                                        userRole ==
-                                                                'auxiliary_police'
-                                                            ? Icons.security
-                                                            : Icons
-                                                                .school, // Display correct icon based on role
+                                                        userRole == 'auxiliary_police' ? Icons.security : Icons.school,
                                                         color: Colors.black,
                                                       ),
                                                     ),
                                                     title: Row(
                                                       children: [
-                                                        Text(
-                                                          userName,
-                                                          style: const TextStyle(
-                                                              fontSize: 16,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold),
+                                                        Text(userName,
+                                                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                                                         ),
-                                                        const SizedBox(
-                                                            width: 8),
-                                                        Text(
-                                                          formattedTime,
-                                                          style:
-                                                              const TextStyle(
-                                                                  fontSize: 12,
-                                                                  color: Colors
-                                                                      .grey),
+                                                        const SizedBox(width: 8),
+                                                        Text(formattedTime, style:
+                                                              const TextStyle(fontSize: 12, color: Colors.grey),
                                                         ),
                                                       ],
                                                     ),
@@ -526,8 +510,7 @@ class _PoliceInterfaceState extends State<PoliceInterface> {
           BottomNavigationBarItem(icon: Icon(Icons.report), label: 'Report'),
         ],
         onTap: (index) {
-          setState(() {
-            _selectedIndex = index;
+          setState(() {_selectedIndex = index;
           });
         },
       ),
