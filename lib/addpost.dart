@@ -101,8 +101,7 @@ class _AddPostScreenState extends State<AddPostScreen> {
       final snapshot = await uploadTask.whenComplete(() {});
       final downloadUrl = await snapshot.ref.getDownloadURL();
 
-      setState(() {
-        _imageUrl = downloadUrl;
+      setState(() { _imageUrl = downloadUrl;
       });
     } catch (e) {
       print("Error uploading image: $e");
@@ -134,16 +133,13 @@ class _AddPostScreenState extends State<AddPostScreen> {
       );
       return;
     }
-
-    setState(() {
-      _isLoading = true;
+    setState(() { _isLoading = true;
     });
 
-    // Call the provided onPostAdded function with the description, category, and photoUrl
-    widget.onPostAdded(_username!, description, photoUrl, _selectedCategory!).then((_) {
-      setState(() {
-        _isLoading = false;
-      });
+ // Call the provided onPostAdded function with all required arguments
+  widget.onPostAdded(_username!, description, photoUrl, _selectedCategory!).then((_) {
+    setState(() { _isLoading = false;
+    });
 
       // Close the screen and go back to the FeedPage
       Navigator.pop(context);
@@ -157,6 +153,7 @@ class _AddPostScreenState extends State<AddPostScreen> {
       );
     });
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -166,28 +163,22 @@ class _AddPostScreenState extends State<AddPostScreen> {
         elevation: 0,
         leading: TextButton(
             onPressed: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => FeedPage()),
+              Navigator.pushAndRemoveUntil(context,
+              MaterialPageRoute(builder: (context) => const FeedPage()), (route) => false,
               );
             },
-            style: TextButton.styleFrom(
-              padding: EdgeInsets.zero,
+            style: TextButton.styleFrom(padding: EdgeInsets.zero,
             ),
-            child: Text(
-              'Cancel', // Label for cancel button
+            child: const Text('Cancel', // Label for cancel button
               style: TextStyle(color: Colors.black, fontSize: 16),
             ),
           ),
         actions: [
           TextButton(
             onPressed: _postContent, // Trigger the post action
-            child: const Text(
-              'Post',
+            child: const Text('Post',
               style: TextStyle(
-                color: Color(0xFF8B0000),
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
+                color: Color(0xFF8B0000), fontWeight: FontWeight.bold, fontSize: 16,
               ),
             ),
           ),
@@ -213,24 +204,20 @@ class _AddPostScreenState extends State<AddPostScreen> {
                 value: _selectedCategory,
                 hint: const Text('Select Category'),
                 items: _categories
-                    .map((category) => DropdownMenuItem<String>(
-                          value: category,
-                          child: Text(category),
+                    .map((category) => DropdownMenuItem<String>(value: category, child: Text(category),
                         ))
                     .toList(),
                 onChanged: (value) {
-                  setState(() {
-                    _selectedCategory = value;
+                  setState(() { _selectedCategory = value;
                   });
                 },
               ),
+            
               const SizedBox(height: 16),
-              TextButton.icon(
-                onPressed: _pickImage, // Trigger the image picker
-                icon: const Icon(Icons.camera_alt, color: Colors.blue),
-                label: const Text(
-                  'Upload Photo',
-                  style: TextStyle(color: Colors.blue),
+              ElevatedButton.icon(
+                onPressed: _pickImage, 
+                icon: const Icon(Icons.camera_alt),
+                label: const Text('Upload Photo',
                 ),
               ),
               const SizedBox(height: 8),
@@ -239,7 +226,7 @@ class _AddPostScreenState extends State<AddPostScreen> {
                   _imageUrl!,
                   fit: BoxFit.cover,
                   width: double.infinity,
-                  height: 200, // Added fixed height for consistency
+                  height: 300, // Added fixed height for consistency
                 ),
               if (_isLoading) // Show loading indicator while posting
                 const Center(child: CircularProgressIndicator()),
