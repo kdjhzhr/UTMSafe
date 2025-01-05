@@ -204,15 +204,48 @@ Future<void> getUserRole() async {
     }
   }
 
-  Future<void> _likePost(String postId, int currentLikes) async {
-    try {
-      await _firestore.collection('posts').doc(postId).update({
-        'likes': currentLikes + 1,
-      });
-    } catch (e) {
-      print("Error liking post: $e");
-    }
+Future<void> _likePost(String postId, int currentLikes) async {
+  final userId = FirebaseAuth.instance.currentUser?.uid;
+
+  if (userId == null) {
+    print("User not logged in");
+    return;
   }
+
+  final postRef = _firestore.collection('posts').doc(postId);
+
+  try {
+    await _firestore.runTransaction((transaction) async {
+      final postSnapshot = await transaction.get(postRef);
+
+      if (!postSnapshot.exists) {
+        print("Post does not exist");
+        return;
+      }
+
+      bool isLiked = postSnapshot.data()?['likedUsers']?.contains(userId) ?? false;
+      int updatedLikes = currentLikes;
+
+      if (isLiked) {
+        // Unlike the post
+        updatedLikes--;
+        transaction.update(postRef, {
+          'likes': updatedLikes,
+          'likedUsers': FieldValue.arrayRemove([userId]),
+        });
+      } else {
+        // Like the post
+        updatedLikes++;
+        transaction.update(postRef, {
+          'likes': updatedLikes,
+          'likedUsers': FieldValue.arrayUnion([userId]),
+        });
+      }
+    });
+  } catch (e) {
+    print("Error toggling like: $e");
+  }
+}
 
 Future<void> _addComment(String postId, String comment) async {
   try {
@@ -474,7 +507,6 @@ Future<void> _addComment(String postId, String comment) async {
     }
   }
 
-  // Function to fetch the most common category
   Stream<DocumentSnapshot> _fetchMostCommonCategory() {
     return _firestore
         .collection('category_counts')
@@ -544,229 +576,240 @@ Future<void> _addComment(String postId, String comment) async {
         ],
       ),
       body: CustomScrollView(
-        slivers: [
-          const SliverAppBar(
-            floating: false,
-            expandedHeight: 150.0,
-            flexibleSpace: FlexibleSpaceBar(
-              background: SafetyBanner(),
+          slivers: [
+            const SliverAppBar(
+              floating: false,
+              expandedHeight: 150.0,
+              flexibleSpace: FlexibleSpaceBar(
+                background: SafetyBanner(),
+              ),
             ),
-          ),
-          // Posts as a SliverList
-          StreamBuilder<List<Post>>(
-            stream: _fetchPosts(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const SliverFillRemaining(
-                  child: Center(child: CircularProgressIndicator()),
-                );
-              }
-              if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return const SliverFillRemaining(
-                  child: Center(child: Text("No posts available.")),
-                );
-              }
+            StreamBuilder<List<Post>>(
+              stream: _fetchPosts(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const SliverFillRemaining(
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const SliverFillRemaining(
+                    child: Center(child: Text("No posts available.")),
+                  );
+                }
 
-              final posts = snapshot.data!;
-              return SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final post = posts[index];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // User details row (username and timestamp)
-                            Row(
-                              children: [
-                                CircleAvatar(
-                                  radius: 20,
-                                    backgroundColor: Colors.grey[300],
-                                    child: const Icon(Icons.school, color: Colors.black,
-                                    ),
-                                ),
-                                const SizedBox(width: 8),
-                                GestureDetector(
-                                  onTap: () => _showUserDetailsDialog(post.name),
-                                  child: Text(
-                                    post.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                final posts = snapshot.data!;
+                return SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final post = posts[index];
+                      return Card(
+                        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  CircleAvatar(radius: 20, backgroundColor: Colors.grey[300],
+                                    child: const Icon(Icons.school, color: Colors.black),
                                   ),
-                                ),
-                                const Spacer(),
-                                Text(_formatTimestamp(post.timestamp),
-                                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            if (post.category != null)
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 8.0),
-                                child: Row(
-                                  children: [
-                                    Text(
-                                      _getCategoryEmoji(post.category!) + ' ', style: const TextStyle(fontSize: 18),
+                                  const SizedBox(width: 8),
+                                  GestureDetector(
+                                    onTap: () => _showUserDetailsDialog(post.name),
+                                    child: Text(post.name,
+                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                                     ),
-                                    Text('${post.category}', style: const TextStyle(
-                                          fontWeight: FontWeight.bold, color: Color(0xFF8B0000)),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            // Post description
-                            Text(post.description),
-                            if (post.photoUrl != null)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 8.0), child: Image.network(post.photoUrl!),
-                              ),
-                            // Like and comment buttons
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.favorite_border, color: Colors.red),
-                                  onPressed: () => _likePost(post.id, post.likes),
-                                ),
-                                Text(post.likes.toString()), const SizedBox(width: 16),
-                                IconButton(
-                                  icon: const Icon(Icons.comment, color: Colors.grey),
-                                  onPressed: () => _showAddCommentDialog(post.id),
-                                ),
-                                StreamBuilder<QuerySnapshot>(
-                                  stream: _firestore
-                                      .collection('posts').doc(post.id).collection('comments').snapshots(),
-                                  builder: (context, snapshot) {
-                                    if (snapshot.connectionState == ConnectionState.waiting) {
-                                      return const CircularProgressIndicator();
-                                    }
-                                    final commentsCount = snapshot.data?.docs.length ?? 0;
-                                    return Text('$commentsCount');
-                                  },
-                                ),
-                                if (post.name == _username) ...[
-                                  const SizedBox(width: 16),
-                                  IconButton(
-                                    icon: const Icon(Icons.edit, color: Color(0xFF1E3A8A)),
-                                    onPressed: () => _showEditPostDialog(post),
                                   ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete,color: Color(0xFF8B0000)),
-                                    onPressed: () => _showDeletePostDialog(post.id, post.name),
+                                  const Spacer(),
+                                  Text(_formatTimestamp(post.timestamp),
+                                    style: const TextStyle(fontSize: 12, color: Colors.grey),
                                   ),
                                 ],
-                              ],
-                            ),
-                            // View comments dropdown
-                            StreamBuilder<QuerySnapshot>(
-                              stream: _firestore
-                                  .collection('posts').doc(post.id).collection('comments')
-                                  .orderBy('timestamp', descending: true)
-                                  .snapshots(),
-                              builder: (context, snapshot) {
-                                if (snapshot.connectionState ==
-                                    ConnectionState.waiting) {
-                                  return const CircularProgressIndicator();
-                                }
-
-                                final commentsCount = snapshot.data?.docs.length ?? 0;
-                                return commentsCount > 0 ? ExpansionTile(
-                                        title: const Text('View Comments'),
+                              ),
+                              const SizedBox(height: 8),
+                              if (post.category != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 8.0),
+                                  child: Row(
+                                    children: [
+                                      Text(
+                                        _getCategoryEmoji(post.category!) + ' ',
+                                        style: const TextStyle(fontSize: 18),
+                                      ),
+                                      Text(
+                                        '${post.category}',
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.bold, color: Color(0xFF8B0000)),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              Text(post.description),
+                              if (post.photoUrl != null)
+                                Padding(padding: const EdgeInsets.only(top: 8.0), 
+                                child: Image.network(post.photoUrl!),
+                                ),
+                              StreamBuilder<DocumentSnapshot>(
+                                stream: _firestore.collection('posts').doc(post.id).snapshots(),
+                                  builder: (context, snapshot) {
+                                    if (!snapshot.hasData) {
+                                      return const Row(
                                         children: [
-                                          ListView.builder(
-                                            shrinkWrap: true,
-                                            itemCount: commentsCount, itemBuilder: (context, index) {
-                                              final commentData = snapshot.data!.docs[index] .data() as Map<String, dynamic>;
-                                              final commentId = snapshot.data!.docs[index].id;
-                                              final commentText = commentData['comment'] ?? '';
-                                              final userName = commentData['userName'] ?? 'Unknown';
-                                              final timestamp = commentData['timestamp'] as Timestamp?;
-                                              final formattedTime = timestamp != null ? _formatTimestamp(timestamp): 'Unknown time';
-                                              final userRole = commentData['role'] ?? 'student';
+                                          IconButton(
+                                            icon: Icon(Icons.favorite_border, color: Colors.grey),
+                                            onPressed: null,
+                                          ),
+                                           Text("0"),
+                                        ],
+                                      );
+                                    }
+                                  final data = snapshot.data!.data() as Map<String, dynamic>;
+                                  final likesCount = data['likes'] ?? 0;
+                                  final userId = FirebaseAuth.instance.currentUser?.uid;
+                                  final isLiked = data['likedUsers']?.contains(userId) ?? false;
 
-                                              return ListTile(
-                                                contentPadding:
-                                                    const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                                                leading: CircleAvatar(radius: 20,backgroundColor:Colors.grey[300],
-                                                    child: Icon(userRole == 'student' ? Icons.school : Icons.security, color: Colors.black,
+                                  return Row(
+                                    children: [
+                                      IconButton(
+                                        icon: Icon(
+                                          isLiked ? Icons.favorite : Icons.favorite_border,
+                                          color: isLiked ? Colors.red : Colors.grey,
+                                        ),
+                                        onPressed: () => _likePost(post.id, likesCount),
+                                      ),
+                                      Text(likesCount.toString()),
+                                      const SizedBox(width: 16),
+                                      IconButton(
+                                        icon: const Icon(Icons.comment, color: Colors.grey),
+                                        onPressed: () => _showAddCommentDialog(post.id),
+                                      ),
+                                      StreamBuilder<QuerySnapshot>(
+                                        stream: _firestore
+                                            .collection('posts').doc(post.id).collection('comments').snapshots(),
+                                        builder: (context, snapshot) {
+                                          if (snapshot.connectionState == ConnectionState.waiting) {
+                                            return const CircularProgressIndicator();
+                                          }
+                                          final commentsCount = snapshot.data?.docs.length ?? 0;
+                                          return Text('$commentsCount');
+                                        },
+                                      ),
+                                      if (post.name == _username) ...[
+                                        const SizedBox(width: 16),
+                                        IconButton(
+                                          icon: const Icon(Icons.edit, color: Color(0xFF1E3A8A)),
+                                          onPressed: () => _showEditPostDialog(post),
+                                        ),
+                                        IconButton(icon: const Icon(Icons.delete, color: Color(0xFF8B0000)),
+                                          onPressed: () => _showDeletePostDialog(post.id, post.name),
+                                        ),
+                                      ],
+                                    ],
+                                  );
+                                },
+                              ),
+                              StreamBuilder<QuerySnapshot>(
+                                stream: _firestore
+                                    .collection('posts').doc(post.id).collection('comments').orderBy('timestamp', descending: true).snapshots(),
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState == ConnectionState.waiting) {
+                                    return const CircularProgressIndicator();
+                                  }
+                                  final commentsCount = snapshot.data?.docs.length ?? 0;
+                                  return commentsCount > 0
+                                      ? ExpansionTile(
+                                          title: const Text('View Comments'),
+                                          children: [
+                                            ListView.builder(shrinkWrap: true, itemCount: commentsCount,
+                                              itemBuilder: (context, index) {
+                                                final commentData = snapshot.data!.docs[index].data() as Map<String, dynamic>;
+                                                final commentId = snapshot.data!.docs[index].id;
+                                                final commentText = commentData['comment'] ?? '';
+                                                final userName = commentData['userName'] ?? 'Unknown';
+                                                final timestamp = commentData['timestamp'] as Timestamp?;
+                                                final formattedTime = timestamp != null ? _formatTimestamp(timestamp) : 'Unknown time';
+                                                final userRole = commentData['role'] ?? 'student';
+
+                                                return ListTile(
+                                                  contentPadding:
+                                                      const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                                                  leading: CircleAvatar(radius: 20, backgroundColor: Colors.grey[300],
+                                                    child: Icon(userRole == 'student'
+                                                          ? Icons.school : Icons.security, color: Colors.black,
                                                     ),
                                                   ),
-                                                title: Row(
-                                                  children: [
-                                                    Flexible(
-                                                      child: Text(
-                                                        userName,style: const TextStyle(fontSize: 16, fontWeight:FontWeight.bold),
-                                                        overflow: TextOverflow.ellipsis,
+                                                  title: Row(
+                                                    children: [
+                                                      Flexible(
+                                                        child: Text(
+                                                          userName,
+                                                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                                          overflow: TextOverflow.ellipsis,
+                                                        ),
                                                       ),
-                                                    ),
-                                                    const SizedBox(width: 8),
-                                                    Text(formattedTime,
-                                                      style: const TextStyle(fontSize: 12, color: Colors.grey),
-                                                    ),
-                                                  ],
-                                                ),
-                                                subtitle: Text(
-                                                  commentText, softWrap: true, overflow: TextOverflow.ellipsis,maxLines: 3,
-                                                ),
-                                                trailing: _username == userName? PopupMenuButton<String>(
-                                                        icon: const Icon(Icons.more_vert,size: 20),
-                                                        onSelected: (value) {
-                                                          if (value == 'edit') {
-                                                            _showEditCommentDialog(post.id,commentId,commentText);
-                                                          } else if (value == 'delete') {
-                                                            _showDeleteCommentDialog(post.id,commentId,userName);
-                                                          }
-                                                        },
-                                                        itemBuilder:
-                                                            (context) => [
-                                                          const PopupMenuItem(value: 'edit',
-                                                            child: Row(
-                                                              children: [
-                                                                Icon(Icons.edit,
-                                                                    size: 20, color: Color(0xFF1E3A8A)),
-                                                                SizedBox(width: 8), Text('Edit'),
-                                                              ],
+                                                      const SizedBox(width: 8),
+                                                      Text(formattedTime,
+                                                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  subtitle: Text(commentText, softWrap: true, overflow: TextOverflow.ellipsis, maxLines: 3,
+                                                  ),
+                                                  trailing: _username == userName
+                                                      ? PopupMenuButton<String>(
+                                                          icon: const Icon(Icons.more_vert, size: 20),
+                                                          onSelected: (value) {
+                                                            if (value == 'edit') {
+                                                              _showEditCommentDialog(post.id, commentId, commentText);
+                                                            } else if (value == 'delete') {
+                                                              _showDeleteCommentDialog(post.id, commentId, userName);
+                                                            }
+                                                          },
+                                                          itemBuilder: (context) =>[
+                                                            const PopupMenuItem(value: 'edit',
+                                                              child: Row(children: [
+                                                                  Icon(Icons.edit, size: 20, color: Color(0xFF1E3A8A)),
+                                                                  SizedBox(width: 8), Text('Edit'),
+                                                                ],
+                                                              ),
                                                             ),
-                                                          ),
-                                                          const PopupMenuItem(value: 'delete',
-                                                            child: Row(
-                                                              children: [
-                                                                Icon(Icons.delete,
-                                                                    size: 20, color: Color(0xFF8B0000)),
-                                                                SizedBox(width: 8), Text('Delete'),
-                                                              ],
+                                                            const PopupMenuItem(
+                                                              value: 'delete',
+                                                              child: Row(children: [
+                                                                  Icon(Icons.delete, size: 20, color: Color(0xFF8B0000)),
+                                                                  SizedBox(width: 8), Text('Delete'),
+                                                                ],
+                                                              ),
                                                             ),
-                                                          ),
-                                                        ],
-                                                      )
-                                                    : null,
-                                              );
-                                            },
-                                          ),
-                                        ],
-                                      )
-                                    : const SizedBox.shrink();
-                              },
-                            ),
-                          ],
+                                                          ],
+                                                        )
+                                                      : null,
+                                                );
+                                              },
+                                            ),
+                                          ],
+                                        )
+                                      : const SizedBox.shrink();
+                                },
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    );
-                  },
-                  childCount: posts.length,
-                ),
-              );
-            },
-          ),
-        ],
-      ),
+                      );
+                    },
+                    childCount: posts.length,
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
+          Navigator.push( context, MaterialPageRoute(
               builder: (context) => AddPostScreen(
                 onPostAdded: (username, description, photoUrl, category) {
                   return _addPost(username, description, photoUrl, category);
@@ -785,21 +828,16 @@ Future<void> _addComment(String postId, String comment) async {
         unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Feed'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.warning), label: 'Emergency'),
+          BottomNavigationBarItem(icon: Icon(Icons.warning), label: 'Emergency'),
         ],
         onTap: (index) {
           if (index == 1) {
             // Navigate to Emergency page
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const SosPage()),
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const SosPage()),
             );
           } else if (index == 0) {
             Navigator.pushNamedAndRemoveUntil(
-              context,
-              '/feed',
-              (route) => false,
+              context, '/feed', (route) => false,
             );
           }
         },
